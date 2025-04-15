@@ -1,6 +1,6 @@
 version = 1
 revision = 1
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 
 [[package]]
 name = "aiofile"
@@ -28,6 +28,7 @@ name = "anyio"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "exceptiongroup", marker = "python_full_version < '3.11'" },
     { name = "idna" },
     { name = "sniffio" },
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
@@ -43,6 +44,12 @@ version = "0.9.21"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/8c/ec/85a997230d9681a1d5154bba250cd26133fb79915bfe2c661c7529592503/caio-0.9.21.tar.gz", hash = "sha256:4f1d30ad0f975de07b4a3ae1cd2e9275fa574f2ca0b49ba5ab16208575650a92", size = 26882 }
 wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/7c/6a6f45381571502af60f29f1dbc6b023c18fb557084b61c9d2d745b45a41/caio-0.9.21-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:a80ae4838696c8e40d860f3de7afea018be4e96bd126706501b1cf34c32c7655", size = 42296 },
+    { url = "https://files.pythonhosted.org/packages/3b/3b/67f1f4c4f9a60700a603cfdab7774d2d67b6430c6b8a610b90a40da5f400/caio-0.9.21-cp310-cp310-manylinux_2_34_aarch64.whl", hash = "sha256:35155eba9b6a134f5a0d42d112245c27d8d24b4b3f707f92bb77c4ef6df61796", size = 79340 },
+    { url = "https://files.pythonhosted.org/packages/46/c0/67070f96a1b35b3ba51bfdcca01ea69161a8326d7df8b9abed568001c94b/caio-0.9.21-cp310-cp310-manylinux_2_34_x86_64.whl", hash = "sha256:a4f9c48259a1126935ba92e9540de9bec6e295aad2cb5bc3a225b31579c2c708", size = 77525 },
+    { url = "https://files.pythonhosted.org/packages/0f/11/dec12ae89bd725083e73d70c8fb3a03f2edd84b445a5cff8214cfd6ac415/caio-0.9.21-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:2ed8ee09acd1276dfac38fe1b872873e715370fc8fb1dad214c8b983c4bd5a22", size = 42298 },
+    { url = "https://files.pythonhosted.org/packages/2a/c7/16906aa0bac32ccfd2001ff4b42a8abe593f7a4ba1b9d3b8ab6af1444f38/caio-0.9.21-cp311-cp311-manylinux_2_34_aarch64.whl", hash = "sha256:6e9cadc82495d97f551ec56e67dc4a79ffaf1420aee8dc25676d89dfed97131a", size = 79954 },
+    { url = "https://files.pythonhosted.org/packages/fb/23/50c8bd0b0c3c04fc0c31f0e1034601d01f067b495f4f427065f2ea9deeaf/caio-0.9.21-cp311-cp311-manylinux_2_34_x86_64.whl", hash = "sha256:4997b64640dc0b72efb4f0f835dcdb5d56027352c9a4d53d5fec6e9abc576d35", size = 78085 },
     { url = "https://files.pythonhosted.org/packages/39/24/6258365f7af3ce62d0c1c29b89716228e1e4b0437df342788634878d5a9f/caio-0.9.21-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:e7314a28d69a0397d1d0ac6c7bfe7973f27f4f7216cf42b0358d7d9ba27bc4cd", size = 42381 },
     { url = "https://files.pythonhosted.org/packages/ca/ab/a0a0c448c2234277b39970c698861f4d4e3ceadb46f4011f410fca89c7b3/caio-0.9.21-cp312-cp312-manylinux_2_34_aarch64.whl", hash = "sha256:1f4241e2b89f31e1fea342c8da9a987fef71d093df7ba1169f469d0be7592608", size = 81320 },
     { url = "https://files.pythonhosted.org/packages/f2/95/738ef0a4468ea963156c2f1db69669cf435d1f2e36e4796bc6ba39bb2016/caio-0.9.21-cp312-cp312-manylinux_2_34_x86_64.whl", hash = "sha256:fdab8c817b6835d997db1532ce7d9f5cbe186265bf0ee9a9840b378aa4a1cba7", size = 80005 },
@@ -80,6 +87,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/64/a4/f71d9cf3a5ac257c993b5ca3f93df5f7fb395c725e7f1e6479d2514173c3/dataclasses_json-0.6.7.tar.gz", hash = "sha256:b6b3e528266ea45b9535223bc53ca645f5208833c29229e847b3f26a1cc55fc0", size = 32227 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c3/be/d0d44e092656fe7a06b55e6103cbce807cdbdee17884a5367c68c9860853/dataclasses_json-0.6.7-py3-none-any.whl", hash = "sha256:0dbf33f26c8d5305befd61b39d2b3414e8a407bedc2834dea9b8d642666fb40a", size = 28686 },
+]
+
+[[package]]
+name = "exceptiongroup"
+version = "1.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/35/2495c4ac46b980e4ca1f6ad6db102322ef3ad2410b79fdde159a4b0f3b92/exceptiongroup-1.2.2.tar.gz", hash = "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc", size = 28883 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/02/cc/b7e31358aac6ed1ef2bb790a9746ac2c69bcb3c8588b41616914eb106eaf/exceptiongroup-1.2.2-py3-none-any.whl", hash = "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b", size = 16453 },
 ]
 
 [[package]]
