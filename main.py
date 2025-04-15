@@ -3,36 +3,38 @@ import shutil
 from pathlib import Path
 
 from vsix_downloader import download_extensions
+from vsix_downloader.data import VersionFilterOptions, DownloadOptions
 
 DOWNLOAD_DIR: Path = Path("./downloads")
 TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
+SKIP_IF_EXISTS: bool = True
+NO_METADATA: bool = True
+FLATTEN_DIR: bool = True
+
 TARGET_PLATFORM: str | None = "win32-x64"
 VSCODE_VERSION: str | None = "1.97.2"
 INCLUDE_PRERELEASE: bool = False
+
 VSIX_LIST: list[str] = [
-    "ms-python.python",
-    "ms-toolsai.jupyter",
-    "ms-toolsai.jupyter-keymap",
-    "ms-toolsai.vscode-jupyter-cell-tags",
-    "ms-toolsai.vscode-jupyter-slideshow",
-    "ms-toolsai.jupyter-renderers",
-    "redhat.java",
-    "vscjava.vscode-java-debug",
-    "vscjava.vscode-maven",
-    "vscjava.vscode-java-test",
-    "vscjava.vscode-java-dependency",
-    "vscjava.vscode-gradle"
+    "ms-python.python"
 ]
 
 
 async def main() -> None:
     await download_extensions(
-        DOWNLOAD_DIR,
-        TEMP_DIR,
-        VSIX_LIST,
-        TARGET_PLATFORM,
-        VSCODE_VERSION,
-        INCLUDE_PRERELEASE
+        ext_names=VSIX_LIST,
+        download_options=DownloadOptions(
+            target_dir=DOWNLOAD_DIR,
+            temp_dir=TEMP_DIR,
+            skip_if_exists=SKIP_IF_EXISTS,
+            no_metadata=NO_METADATA,
+            flatten_dir=FLATTEN_DIR,
+        ),
+        version_filter_options=VersionFilterOptions(
+            target_platform=TARGET_PLATFORM,
+            vscode_version=VSCODE_VERSION,
+            include_prerelease=INCLUDE_PRERELEASE,
+        ),
     )
 
 

@@ -8,22 +8,22 @@ import aioshutil
 import httpx
 import semantic_version
 
-from vsix_downloader.data import VSCodeExtension, VSCodeExtensionVersion
+from vsix_downloader.data import VSCodeExtension, VSCodeExtensionVersion, VersionFilterOptions
 
 
 def get_latest_extension_version(
         extension: VSCodeExtension,
-        target_platform: str | None,
-        vscode_version: str | None,
-        include_prerelease: bool = False,
+        version_filter_options: VersionFilterOptions
 ) -> VSCodeExtensionVersion | None:
     for version in extension.versions:
-        if not include_prerelease and version.prerelease:
+        if not version_filter_options.include_prerelease and version.prerelease:
             continue
-        if target_platform and version.target_platform and version.target_platform != target_platform:
+        if version_filter_options.target_platform and \
+                version.target_platform and \
+                version.target_platform != version_filter_options.target_platform:
             continue
-        if vscode_version and version.code_engine:
-            target_vscode_version = semantic_version.Version(vscode_version)
+        if version_filter_options.vscode_version and version.code_engine:
+            target_vscode_version = semantic_version.Version(version_filter_options.vscode_version)
             if not semantic_version.NpmSpec(version.code_engine).match(target_vscode_version):
                 continue
         return version

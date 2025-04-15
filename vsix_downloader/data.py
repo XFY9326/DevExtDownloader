@@ -1,5 +1,6 @@
 import dataclasses
 import datetime
+from pathlib import Path
 
 from dataclasses_json import config, DataClassJsonMixin
 
@@ -54,3 +55,19 @@ class VSCodeExtension(DataClassJsonMixin):
     extension_name: str
     display_name: str
     versions: tuple[VSCodeExtensionVersion, ...]
+
+
+@dataclasses.dataclass(frozen=True)
+class DownloadOptions:
+    target_dir: Path = Path("./download")
+    temp_dir: Path = Path("./download/.temp")
+    skip_if_exists: bool = False
+    no_metadata: bool = False
+    flatten_dir: bool = False
+
+
+@dataclasses.dataclass(frozen=True)
+class VersionFilterOptions:
+    target_platform: str | None = None
+    vscode_version: str | None = None
+    include_prerelease: bool = False

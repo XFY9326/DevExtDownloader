@@ -25,6 +25,23 @@ uv sync
 Set VSIX packages (Modify `main.py`):
 
 ```python
+from pathlib import Path
+
+# Download dir
+DOWNLOAD_DIR: Path = Path("./downloads")
+
+# Temp dir
+TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
+
+# Skip if exists or not
+SKIP_IF_EXISTS: bool = False
+
+# No metadata or not
+NO_METADATA: bool = False
+
+# Flatten dir or not
+FLATTEN_DIR: bool = False
+
 # Target platform or None
 TARGET_PLATFORM: str | None = "win32-x64"
 
