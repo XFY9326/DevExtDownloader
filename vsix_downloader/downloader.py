@@ -48,7 +48,7 @@ async def _run_download_task(
         )
 
 
-async def download_extensions(
+async def download_latest_extensions(
         ext_names: Collection[str],
         download_options: DownloadOptions,
         version_filter_options: VersionFilterOptions
@@ -57,7 +57,7 @@ async def download_extensions(
         return
 
     download_options.target_dir.mkdir(parents=True, exist_ok=True)
-    async with httpx.AsyncClient(timeout=httpx.Timeout(30.0)) as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
         api = VSCodeExtensionAPI(client)
         extensions: dict[str, VSCodeExtension] = await api.get_extensions(ext_names)
         mssing_extensions = set(ext_names) - set(extensions.keys())
