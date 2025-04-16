@@ -43,6 +43,7 @@ NO_METADATA: bool = False
 FLATTEN_DIR: bool = False
 
 # Target platform or None
+# Currently available platforms are: win32-x64, win32-arm64, linux-x64, linux-arm64, linux-armhf, alpine-x64, alpine-arm64, darwin-x64, darwin-arm64 and web
 TARGET_PLATFORM: str | None = "win32-x64"
 
 # Required VSCode version or None
