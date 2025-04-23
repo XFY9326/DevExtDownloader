@@ -1,12 +1,27 @@
 # VSIX Downloader
 
+Download VSIX packages from Visual Studio Marketplace
+
+**Only support Vistual Studio Code Extensions**
+
 ## Requirements
 
 Python 3.10+
 
+## Features
+
+ - Simply configure to download the latest extension
+ - Support custom download platforms and compatible VSCode versions
+ - Support for filtering pre-release versions
+ - Improving download speed using asyncio
+ - Supports incremental download and complete file download
+ - Supports generating metadata for downloaded files
+
 ## Usage
 
-Install `uv`:
+Install `uv` according to the [official doc](https://docs.astral.sh/uv/getting-started/installation/)
+
+Or maybe you don't want to read those documents:
 
 ```shell
 pip install pipx
@@ -16,7 +31,7 @@ pipx ensurepath
 pipx install uv
 ```
 
-Init project venv:
+Init project venv (Optional):
 
 ```shell
 uv sync
@@ -65,7 +80,7 @@ VSCODE_VERSION: str | None = "1.92.0"
 # If not set, it will download the latest prerelease version
 INCLUDE_PRERELEASE: bool = False
 
-# VSIX packages id list
+# VSIX packages ext id list
 # Example: https://marketplace.visualstudio.com/items?itemName=ms-python.python
 # [ext_id] is ms-python.python
 VSIX_LIST: list[str] = [
@@ -73,7 +88,7 @@ VSIX_LIST: list[str] = [
 ]
 ```
 
-Run script:
+Run script to download all latest compatible extensions:
 
 ```shell
 uv run main.py
