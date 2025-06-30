@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>VSCode 扩展下载列表</title>
+    <!--suppress CssUnusedSymbol -->
+    <style>
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: "Segoe UI", "PingFang SC", sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .search-bar {
+            max-width: 60vh;
+            margin: 40px auto 40px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: transform .1s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card details {
+            padding: 16px;
+        }
+
+        summary::-webkit-details-marker, summary::marker {
+            display: none;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .title-group {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .display-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .publisher {
+            font-size: 0.9em;
+            color: #666;
+            margin-right: 8px;
+        }
+
+        summary:hover .display-name {
+            color: #007acc;
+        }
+
+        summary::after {
+            content: '▼';
+            font-size: 0.8em;
+            color: #888;
+            transition: transform 0.2s;
+        }
+
+        details[open] summary::after {
+            content: '▲';
+        }
+
+        .tag {
+            background: #e8f0fe;
+            color: #1967d2;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            margin: 4px 4px 0 0;
+        }
+
+        .description {
+            margin: 10px 0;
+            font-size: 0.95em;
+            color: #555;
+        }
+
+        .version-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .version-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .version-info {
+            flex: 1;
+        }
+
+        .download-link {
+            background: #007acc;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-left: 16px;
+            white-space: nowrap;
+        }
+
+        .download-link:hover {
+            background: #005fa3;
+        }
+    </style>
+</head>
+<body>
+<h1>VSCode 扩展下载列表</h1>
+<div class="search-bar">
+    <label for="searchInput" class="sr-only">搜索扩展名称、发布者或分类</label>
+    <input type="text" id="searchInput" placeholder="搜索扩展名称、发布者或分类…">
+</div>
+
+<div id="cardsContainer"></div>
+
+<!-- JSON 数据注入 -->
+<script>
+    /**
+     * @typedef {Object} ExtensionVersion
+     * @property {string} version
+     * @property {boolean} prerelease
+     * @property {string} target_platform
+     * @property {string} code_engine
+     * @property {string} last_updated
+     * @property {string} file_url
+     */
+
+    /**
+     * @typedef {Object} ExtensionItem
+     * @property {string} display_name
+     * @property {string} publisher_name
+     * @property {string[]} categories
+     * @property {string} short_description
+     * @property {ExtensionVersion[]} versions
+     */
+
+    /** @type {ExtensionItem[]} */
+    const items = {{ items | tojson }};
+</script>
+
+<!-- 渲染 & 搜索 -->
+<script>
+    const container = document.getElementById('cardsContainer');
+
+    /**
+     * 创建扩展卡片
+     * @param {ExtensionItem} item
+     * @returns {HTMLDivElement}
+     */
+    function createCard(item) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const searchText = [item.display_name, item.publisher_name, ...(item.categories || [])].join(' ').toLowerCase();
+        card.setAttribute('data-search', searchText);
+
+        const details = document.createElement('details');
+
+        const summary = document.createElement('summary');
+        summary.className = 'summary-header';
+
+        const titleGroup = document.createElement('span');
+        titleGroup.className = 'title-group';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'display-name';
+        nameSpan.textContent = item.display_name;
+
+        const pubSpan = document.createElement('span');
+        pubSpan.className = 'publisher';
+        pubSpan.textContent = `by ${item.publisher_name}`;
+
+        titleGroup.append(nameSpan, pubSpan);
+
+        for (const cat of item.categories) {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = cat;
+            titleGroup.appendChild(tag);
+        }
+
+        summary.appendChild(titleGroup);
+        details.appendChild(summary);
+
+        const desc = document.createElement('p');
+        desc.className = 'description';
+        desc.textContent = item.short_description;
+        details.appendChild(desc);
+
+        const ul = document.createElement('ul');
+        ul.className = 'version-list';
+
+        for (const ver of item.versions) {
+            const li = document.createElement('li');
+            li.className = 'version-item';
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'version-info';
+            infoDiv.innerHTML = `<strong>${ver.version}</strong>` +
+                (ver.prerelease ? `<span style="color:#d9534f; font-size:0.85em; margin-left:4px;">(预发布)</span>` : '') +
+                `<br>平台：${ver.target_platform}<br>引擎：${ver.code_engine}<br>更新时间：${ver.last_updated}`;
+
+            const link = document.createElement('a');
+            link.className = 'download-link';
+            link.href = ver.file_url;
+            link.download = '';
+            link.textContent = '下载';
+
+            li.append(infoDiv, link);
+            ul.appendChild(li);
+        }
+
+        details.appendChild(ul);
+        card.appendChild(details);
+
+        return card;
+    }
+
+    // 渲染所有卡片
+    items.forEach(item => container.appendChild(createCard(item)));
+
+    // 多关键词搜索
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const keywords = this.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        document.querySelectorAll('#cardsContainer .card').forEach(card => {
+            const text = card.getAttribute('data-search');
+            const visible = keywords.every(k => text.includes(k));
+            card.style.display = visible ? '' : 'none';
+        });
+    });
+</script>
+</body>
+</html>

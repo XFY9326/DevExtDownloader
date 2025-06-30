@@ -49,6 +49,11 @@ class VSCodeExtensionAPI:
             extension_id=extension["extensionId"],
             extension_name=extension["extensionName"],
             display_name=extension["displayName"],
+            publisher_id=extension["publisher"]["publisherId"],
+            publisher_name=extension["publisher"]["publisherName"],
+            publisher_display_name=extension["publisher"]["displayName"],
+            short_description=extension["shortDescription"],
+            categories=tuple(extension["categories"]),
             versions=tuple(
                 VSCodeExtensionVersion(
                     version=version["version"],

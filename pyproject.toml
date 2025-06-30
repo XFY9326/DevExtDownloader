@@ -9,6 +9,7 @@ dependencies = [
     "aioshutil>=1.5",
     "dataclasses-json>=0.6.7",
     "httpx>=0.28.1",
+    "jinja2>=3.1.6",
     "pytz>=2025.2",
     "semantic-version>=2.10.0",
     "tqdm>=4.67.1",

@@ -11,6 +11,13 @@ import semantic_version
 from vsix_downloader.data import VSCodeExtension, VSCodeExtensionVersion, VersionFilterOptions
 
 
+def get_download_file_name(extension: VSCodeExtension, version: VSCodeExtensionVersion) -> str:
+    if version.target_platform:
+        return f"{extension.unified_name}-{version.version}@{version.target_platform}.vsix"
+    else:
+        return f"{extension.unified_name}-{version.version}.vsix"
+
+
 def get_latest_extension_version(
         extension: VSCodeExtension,
         version_filter_options: VersionFilterOptions
@@ -66,8 +73,8 @@ async def download_file(
         if file_name is None or len(file_name) == 0:
             raise ValueError("No file name")
 
-        target_tmp_path = temp_dir.joinpath(hashlib.sha1(str(url).encode("utf-8")).hexdigest())
-        target_final_path = target_dir.joinpath(file_name)
+        target_tmp_path = temp_dir / hashlib.sha1(str(url).encode("utf-8")).hexdigest()
+        target_final_path = target_dir / file_name
         async with aiofile.async_open(target_tmp_path, mode="wb") as f:
             async for chunk in response.aiter_bytes():
                 await f.write(chunk)
