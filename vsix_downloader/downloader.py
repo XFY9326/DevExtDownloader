@@ -60,9 +60,9 @@ async def download_latest_extensions(
     async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
         api = VSCodeExtensionAPI(client)
         extensions: dict[str, VSCodeExtension] = await api.get_extensions(ext_names)
-        mssing_extensions = set(ext_names) - set(extensions.keys())
-        if len(mssing_extensions) > 0:
-            print(f"Warning: No extension found for {', '.join(mssing_extensions)}")
+        missing_extensions = set(ext_names) - set(extensions.keys())
+        if len(missing_extensions) > 0:
+            print(f"Warning: No extension found for {', '.join(missing_extensions)}")
 
         download_tasks = []
         for ext_name, extension in extensions.items():

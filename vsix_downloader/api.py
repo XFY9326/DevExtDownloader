@@ -3,7 +3,7 @@ from typing import Collection
 import httpx
 
 from . import iso8601
-from .data import VSCodeExtension, VSCodeExtensionVersion, VSCodeExtensionFile, VSCodeExtensionProprety
+from .data import VSCodeExtension, VSCodeExtensionVersion, VSCodeExtensionFile, VSCodeExtensionProperty
 
 
 class VSCodeExtensionAPI:
@@ -61,8 +61,8 @@ class VSCodeExtensionAPI:
                         )
                         for file in version["files"]
                     ),
-                    propreties=tuple(
-                        VSCodeExtensionProprety(
+                    properties=tuple(
+                        VSCodeExtensionProperty(
                             key=prop["key"],
                             value=prop["value"],
                         )

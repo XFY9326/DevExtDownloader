@@ -12,7 +12,7 @@ class VSCodeExtensionFile(DataClassJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class VSCodeExtensionProprety(DataClassJsonMixin):
+class VSCodeExtensionProperty(DataClassJsonMixin):
     key: str
     value: str
 
@@ -26,13 +26,13 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
         decoder=lambda s: datetime.datetime.fromisoformat(s)
     ))
     files: tuple[VSCodeExtensionFile, ...]
-    propreties: tuple[VSCodeExtensionProprety, ...]
+    properties: tuple[VSCodeExtensionProperty, ...]
 
     def get_file_source(self, asset_type: str) -> str | None:
         return next((i.source for i in self.files if i.asset_type == asset_type), None)
 
-    def get_proprety_value(self, key: str) -> str | None:
-        return next((i.value for i in self.propreties if i.key == key), None)
+    def get_property_value(self, key: str) -> str | None:
+        return next((i.value for i in self.properties if i.key == key), None)
 
     @property
     def package_url(self) -> str:
@@ -42,11 +42,11 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
 
     @property
     def code_engine(self) -> str | None:
-        return self.get_proprety_value("Microsoft.VisualStudio.Code.Engine")
+        return self.get_property_value("Microsoft.VisualStudio.Code.Engine")
 
     @property
     def prerelease(self) -> bool:
-        return bool(self.get_proprety_value("Microsoft.VisualStudio.Code.PreRelease"))
+        return bool(self.get_property_value("Microsoft.VisualStudio.Code.PreRelease"))
 
 
 @dataclasses.dataclass(frozen=True)

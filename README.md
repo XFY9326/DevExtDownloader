@@ -2,7 +2,7 @@
 
 Download VSIX packages from Visual Studio Marketplace
 
-**Only support Vistual Studio Code Extensions**
+**Only support Visual Studio Code Extensions**
 
 ## Requirements
 
