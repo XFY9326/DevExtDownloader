@@ -52,6 +52,12 @@ TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
 # If exists, skip download
 SKIP_IF_EXISTS: bool = False
 
+# Only keep latest version
+KEEP_ONLY_LATEST: bool = False
+
+# Download concurrency
+DOWNLOAD_CONCURRENCY: int = 8
+
 # No metadata or not
 # Generate [ext_id.json] before download
 NO_METADATA: bool = False
