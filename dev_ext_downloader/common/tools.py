@@ -8,6 +8,7 @@ from typing import Any, Generator
 import aiofile
 import aioshutil
 import httpx
+from tenacity import retry, stop_after_attempt, wait_incrementing, retry_if_exception_type
 
 
 def get_file_name_from_header(headers: httpx.Headers) -> str | None:
@@ -30,6 +31,12 @@ def get_file_name_from_response(response: httpx.Response) -> str | None:
     return result.strip()
 
 
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_incrementing(start=0, increment=2, max=30),
+    retry=retry_if_exception_type(httpx.HTTPError),
+    reraise=True
+)
 async def download_file(
         client: httpx.AsyncClient,
         url: str | httpx.URL,
@@ -42,28 +49,34 @@ async def download_file(
     temp_dir.mkdir(parents=True, exist_ok=True)
     target_dir.mkdir(parents=True, exist_ok=True)
 
+    target_tmp_path = temp_dir / hashlib.sha1(str(url).encode("utf-8")).hexdigest()
+
+    if file_name and isinstance(file_name, str):
+        target_final_path = target_dir / file_name.strip()
+        if skip_if_exists and target_final_path.is_file():
+            return target_final_path
+
     async with client.stream("GET", url, follow_redirects=True) as response:
-        response_file_name = get_file_name_from_response(response)
+        response.raise_for_status()
 
         if file_name is None:
-            file_name = response_file_name
-        elif isinstance(file_name, type(callable)):
-            file_name = file_name(response_file_name)
+            file_name = get_file_name_from_response(response)
+        elif isinstance(file_name, Callable):
+            file_name = file_name(get_file_name_from_response(response))
         else:
-            file_name = None if file_name is None else file_name.strip()
+            file_name = str(file_name).strip()
 
-        if file_name is None or len(file_name) == 0:
-            raise ValueError("No file name")
+        if not file_name:
+            raise ValueError(f"Unknown download file name: {url}")
 
-        target_tmp_path = temp_dir / hashlib.sha1(str(url).encode("utf-8")).hexdigest()
         target_final_path = target_dir / file_name
-
         if skip_if_exists and target_final_path.is_file():
             return target_final_path
 
         async with aiofile.async_open(target_tmp_path, mode="wb") as f:
             async for chunk in response.aiter_bytes():
                 await f.write(chunk)
+            await f.flush(sync_metadata=True)
 
         await aioshutil.move(target_tmp_path, target_final_path)
         return target_final_path
@@ -102,3 +115,7 @@ def pretty_bytes(num_bytes: int, precision: int = 2) -> str:
         num_bytes /= 1024.0
         index += 1
     return f"{num_bytes:.{precision}f} {units[index]}"
+
+
+def get_full_extension(filename: str) -> str:
+    return "".join(Path(filename).suffixes)

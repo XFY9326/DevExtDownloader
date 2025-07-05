@@ -23,6 +23,7 @@ TASK_SPEC_PATH: Path = DOWNLOAD_DIR.joinpath("task-spec.json")
 SKIP_IF_EXISTS: bool = True
 
 # Only keep latest version
+# Depends on metadata
 KEEP_ONLY_LATEST: bool = True
 
 # Download concurrency
@@ -51,7 +52,10 @@ TARGET_BUILD_VERSION: str | None = "IC-243.22562.13"
 # Jetbrains plugin id list
 # Example: https://plugins.jetbrains.com/plugin/7495--ignore
 # [ext_id] is '7495'
-PLUGINS_LIST: list[str | JetbrainsDef] = ["7495"]
+PLUGINS_LIST: list[str | JetbrainsDef] = [
+    "24468",  # https://plugins.jetbrains.com/plugin/24468-classic-ui
+    "7495",  # https://plugins.jetbrains.com/plugin/7495--ignore
+]
 
 # For generating updatePlugins.xml
 PLUGINS_DOWNLOAD_BASE_URL: str | None = "http://localhost:8080"

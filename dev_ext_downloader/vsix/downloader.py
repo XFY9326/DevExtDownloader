@@ -41,24 +41,30 @@ async def _run_download_task(
         skip_if_exists=download_options.skip_if_exists,
     )
 
-    if not download_options.no_metadata:
-        meta_data_path = extension_dir / f"{extension.unified_name}.json"
+    meta_data_path = extension_dir / f"{extension.unified_name}.json"
+    if download_options.no_metadata:
+        if meta_data_path.is_file():
+            meta_data_path.unlink(missing_ok=True)
+    else:
         has_old_meta_data = meta_data_path.is_file()
-        async with aiofile.async_open(meta_data_path, "w+", encoding="utf-8") as f:
-            if not has_old_meta_data or download_options.keep_only_latest:
+        async with aiofile.async_open(meta_data_path, "a+", encoding="utf-8") as f:
+            if not has_old_meta_data:
                 version_list = [version]
             else:
                 try:
-                    version_list = [
-                        version,
-                        *VSCodeExtension.from_json(await f.read()).versions,
-                    ]
+                    f.seek(0)
+                    exists_extension = VSCodeExtension.from_json(await f.read())
+                    version_list = [version, *exists_extension.versions]
                 except Exception as e:
-                    print(
-                        f"Warning: Can't load old meta data from {extension.unified_name}.",
-                        e,
-                    )
+                    print(f"Warning: Can't load old meta data for {extension.unified_name}.", e)
+                    exists_extension = None
                     version_list = [version]
+                if exists_extension and download_options.keep_only_latest:
+                    if download_options.keep_only_latest:
+                        for v in exists_extension.versions:
+                            old_file_path = extension_dir / get_download_file_name(exists_extension, v)
+                            if old_file_path != download_file_path:
+                                old_file_path.unlink(missing_ok=True)
             version_list.sort(key=lambda i: i.sort_key, reverse=True)
             download_meta = VSCodeExtension(
                 extension_id=extension.extension_id,
@@ -71,12 +77,10 @@ async def _run_download_task(
                 categories=extension.categories,
                 versions=tuple(version_list),
             )
-            await f.write(download_meta.to_json(indent=2, ensure_ascii=True))
-
-    if download_options.keep_only_latest:
-        for old_package in extension_dir.glob("*.vsix"):
-            if old_package.is_file() and old_package != download_file_path:
-                old_package.unlink()
+            await f.file.truncate(0)
+            f.seek(0)
+            await f.write(download_meta.to_json(indent=2, ensure_ascii=False))
+            await f.flush(sync_metadata=True)
 
 
 async def _download_task(

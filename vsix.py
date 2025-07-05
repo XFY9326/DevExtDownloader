@@ -20,6 +20,7 @@ TASK_SPEC_PATH: Path = DOWNLOAD_DIR.joinpath("task-spec.json")
 SKIP_IF_EXISTS: bool = True
 
 # Only keep latest version
+# Depends on metadata
 KEEP_ONLY_LATEST: bool = True
 
 # Download concurrency

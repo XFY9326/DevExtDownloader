@@ -1,10 +1,12 @@
+import hashlib
+import re
 from pathlib import Path
 from typing import AsyncGenerator, Any
 
 import aiofile
 
 from dev_ext_downloader.common.tools import iter_meta_data_json
-from .data import JetbrainsDownloadPlugin, JetbrainsDownloadVersion
+from .data import JetbrainsDownloadPlugin, JetbrainsDownloadVersion, JetbrainsPlugin
 
 
 async def iter_meta_data(
@@ -16,6 +18,14 @@ async def iter_meta_data(
                 yield JetbrainsDownloadPlugin.from_json(await f.read())
             except Exception as e:
                 print(f"Warning: meta file {meta_path} could not be read.", e)
+
+
+def get_download_file_name(plugin: JetbrainsPlugin, extension: str) -> str:
+    name = re.sub(r"\s+", "-", plugin.name.lower())
+    prefix = f"{name}_{plugin.version.version}"
+    suffix_text = f"{prefix}-{plugin.version.since_build}-{plugin.version.until_build}"
+    suffix = hashlib.sha256(suffix_text.encode("utf-8")).hexdigest()[:8]
+    return f"{prefix}_{suffix}{extension}"
 
 
 def get_download_file_path(
