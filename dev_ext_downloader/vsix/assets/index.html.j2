@@ -32,7 +32,7 @@
 
         .search-bar {
             max-width: 60vh;
-            margin: 40px auto 40px;
+            margin: 40px auto;
         }
 
         .search-bar input {
@@ -151,6 +151,35 @@
         .download-link:hover {
             background: #005fa3;
         }
+
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .pagination button {
+            margin: 0 4px;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background: #007acc;
+            color: #fff;
+            border-color: #007acc;
+        }
+
+        .pagination button.disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
     </style>
 </head>
 <body>
@@ -159,10 +188,9 @@
     <label for="searchInput" class="sr-only">搜索扩展名称、发布者或分类</label>
     <input type="text" id="searchInput" placeholder="搜索扩展名称、发布者或分类…">
 </div>
-
 <div id="cardsContainer"></div>
+<div id="pagination" class="pagination"></div>
 
-<!-- JSON 数据注入 -->
 <script>
     /**
      * @typedef {Object} ExtensionVersion
@@ -176,6 +204,7 @@
 
     /**
      * @typedef {Object} ExtensionItem
+     * @property {string} extension_id
      * @property {string} display_name
      * @property {string} publisher_name
      * @property {string[]} categories
@@ -187,96 +216,123 @@
     const items = {{ items | tojson }};
 </script>
 
-<!-- 渲染 & 搜索 -->
 <script>
     const container = document.getElementById('cardsContainer');
+    const paginationEl = document.getElementById('pagination');
+    /** @type {HTMLInputElement} */
+    const searchInput = document.getElementById('searchInput');
+    const itemsPerPage = 50;
+    let currentPage = 1;
+    let filteredItems = items.slice();
 
-    /**
-     * 创建扩展卡片
-     * @param {ExtensionItem} item
-     * @returns {HTMLDivElement}
-     */
     function createCard(item) {
         const card = document.createElement('div');
         card.className = 'card';
-
-        const searchText = [item.display_name, item.publisher_name, ...(item.categories || [])].join(' ').toLowerCase();
+        const searchText = [item.display_name, item.publisher_name, item.extension_id, ...(item.categories || [])].join(' ').toLowerCase();
         card.setAttribute('data-search', searchText);
-
         const details = document.createElement('details');
-
         const summary = document.createElement('summary');
         summary.className = 'summary-header';
-
         const titleGroup = document.createElement('span');
         titleGroup.className = 'title-group';
-
         const nameSpan = document.createElement('span');
         nameSpan.className = 'display-name';
         nameSpan.textContent = item.display_name;
-
         const pubSpan = document.createElement('span');
         pubSpan.className = 'publisher';
         pubSpan.textContent = `by ${item.publisher_name}`;
-
         titleGroup.append(nameSpan, pubSpan);
-
         for (const cat of item.categories) {
             const tag = document.createElement('span');
             tag.className = 'tag';
             tag.textContent = cat;
             titleGroup.appendChild(tag);
         }
-
         summary.appendChild(titleGroup);
         details.appendChild(summary);
-
+        const idLine = document.createElement('p');
+        idLine.className = 'description';
+        idLine.textContent = `ID：${item.extension_id}`;
+        details.appendChild(idLine);
         const desc = document.createElement('p');
         desc.className = 'description';
         desc.textContent = item.short_description;
         details.appendChild(desc);
-
         const ul = document.createElement('ul');
         ul.className = 'version-list';
-
         for (const ver of item.versions) {
             const li = document.createElement('li');
             li.className = 'version-item';
-
             const infoDiv = document.createElement('div');
             infoDiv.className = 'version-info';
-            infoDiv.innerHTML = `<strong>${ver.version}</strong>` +
-                (ver.prerelease ? `<span style="color:#d9534f; font-size:0.85em; margin-left:4px;">(预发布)</span>` : '') +
-                `<br>平台：${ver.target_platform}<br>引擎：${ver.code_engine}<br>更新时间：${ver.last_updated}`;
-
+            infoDiv.innerHTML = `<strong>${ver.version}</strong>${ver.prerelease ? `<span style="color:#d9534f;font-size:0.85em;margin-left:4px;">(预发布)</span>` : ''}<br>` +
+                `平台：${ver.target_platform}<br>引擎：${ver.code_engine}<br>更新时间：${ver.last_updated}`;
             const link = document.createElement('a');
             link.className = 'download-link';
             link.href = ver.file_url;
             link.download = '';
             link.textContent = '下载';
-
             li.append(infoDiv, link);
             ul.appendChild(li);
         }
-
         details.appendChild(ul);
         card.appendChild(details);
-
         return card;
     }
 
-    // 渲染所有卡片
-    items.forEach(item => container.appendChild(createCard(item)));
+    function renderPage(page) {
+        currentPage = page;
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        container.innerHTML = '';
+        filteredItems.slice(start, end).forEach(item => container.appendChild(createCard(item)));
+        renderPagination();
+    }
 
-    // 多关键词搜索
-    document.getElementById('searchInput').addEventListener('input', function () {
-        const keywords = this.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-        document.querySelectorAll('#cardsContainer .card').forEach(card => {
-            const text = card.getAttribute('data-search');
-            const visible = keywords.every(k => text.includes(k));
-            card.style.display = visible ? '' : 'none';
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
+        paginationEl.innerHTML = '';
+        const createBtn = (text, page, disabled = false) => {
+            const btn = document.createElement('button');
+            btn.textContent = text;
+            if (disabled) btn.classList.add('disabled');
+            if (page === currentPage) btn.classList.add('active');
+            if (!disabled) btn.addEventListener('click', () => renderPage(page));
+            return btn;
+        };
+
+        paginationEl.appendChild(createBtn('<<', 1, currentPage === 1));
+        paginationEl.appendChild(createBtn('<', Math.max(1, currentPage - 1), currentPage === 1));
+
+        let pages;
+        if (totalPages <= 7) pages = Array.from({length: totalPages}, (_, i) => i + 1);
+        else if (currentPage <= 4) pages = [1, 2, 3, 4, 5, '...', totalPages];
+        else if (currentPage >= totalPages - 3) pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        else pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+
+        pages.forEach(p => {
+            if (p === '...') {
+                const span = document.createElement('span');
+                span.textContent = '...';
+                paginationEl.appendChild(span);
+            } else {
+                paginationEl.appendChild(createBtn(p, p));
+            }
         });
+        paginationEl.appendChild(createBtn('>', Math.min(totalPages, currentPage + 1), currentPage === totalPages));
+        paginationEl.appendChild(createBtn('>>', totalPages, currentPage === totalPages));
+    }
+
+    searchInput.addEventListener('input', () => {
+        const keys = searchInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        filteredItems = items.filter(item => {
+            const text = [item.display_name, item.publisher_name, item.extension_id, ...(item.categories || [])].join(' ').toLowerCase();
+            return keys.every(k => text.includes(k));
+        });
+        renderPage(1);
     });
+
+    renderPage(1);
 </script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 [project]
-name = "vsix-downloader"
+name = "dev-ext-downloader"
 version = "0.1.0"
 readme = "README.md"
-description = "VSIX downloader"
+description = "Jetbrains and VSCode extensions downloader"
 requires-python = ">=3.10"
 dependencies = [
     "aiofile>=3.9.0",
@@ -10,6 +10,7 @@ dependencies = [
     "dataclasses-json>=0.6.7",
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
+    "lxml>=6.0.0",
     "pytz>=2025.2",
     "semantic-version>=2.10.0",
     "tqdm>=4.67.1",
@@ -17,3 +18,8 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+[dependency-groups]
+dev = [
+    "types-lxml>=2025.3.30",
+]

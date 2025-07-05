@@ -2,7 +2,9 @@ import dataclasses
 import datetime
 
 import semantic_version
-from dataclasses_json import config, DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
+
+from dev_ext_downloader.common.models import DownloadOptions
 
 
 @dataclasses.dataclass(frozen=True)
@@ -21,10 +23,12 @@ class VSCodeExtensionProperty(DataClassJsonMixin):
 class VSCodeExtensionVersion(DataClassJsonMixin):
     version: str
     target_platform: str | None
-    last_updated: datetime.datetime = dataclasses.field(metadata=config(
-        encoder=lambda dt: dt.isoformat(),
-        decoder=lambda s: datetime.datetime.fromisoformat(s)
-    ))
+    last_updated: datetime.datetime = dataclasses.field(
+        metadata=config(
+            encoder=lambda dt: dt.isoformat(),
+            decoder=lambda s: datetime.datetime.fromisoformat(s),
+        )
+    )
     files: tuple[VSCodeExtensionFile, ...]
     properties: tuple[VSCodeExtensionProperty, ...]
 
@@ -36,7 +40,9 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
 
     @property
     def package_url(self) -> str:
-        package_url = self.get_file_source("Microsoft.VisualStudio.Services.VSIXPackage")
+        package_url = self.get_file_source(
+            "Microsoft.VisualStudio.Services.VSIXPackage"
+        )
         assert package_url is not None, "No package url"
         return package_url
 
@@ -51,7 +57,7 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
     @property
     def sort_key(self) -> tuple:
         v = semantic_version.Version(version_string=self.version)
-        v.prerelease = self.prerelease,
+        v.prerelease = (self.prerelease,)
         v.build = str(self.last_updated.timestamp() * 1000)
         return v.precedence_key
 
@@ -74,15 +80,7 @@ class VSCodeExtension(DataClassJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class DownloadOptions(DataClassJsonMixin):
-    skip_if_exists: bool = False
-    no_metadata: bool = False
-    flatten_dir: bool = False
-    keep_only_latest: bool = False
-
-
-@dataclasses.dataclass(frozen=True)
-class VersionFilterOptions(DataClassJsonMixin):
+class VSCodeExtFilterOptions(DataClassJsonMixin):
     target_platform: str | None = None
     vscode_version: str | None = None
     include_prerelease: bool = False
@@ -92,4 +90,4 @@ class VersionFilterOptions(DataClassJsonMixin):
 class VSCodeExt(DataClassJsonMixin):
     ext_id: str
     download_options: DownloadOptions | None = None
-    version_filter_options: VersionFilterOptions | None = None
+    filter_options: VSCodeExtFilterOptions | None = None

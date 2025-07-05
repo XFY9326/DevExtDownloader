@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins>
+    {% for plugin in plugins %}
+        <plugin id="{{ plugin.id }}" version="{{ plugin.version.version }}" url="{{ plugin.version.url }}">
+            <name>{{ plugin.name }}</name>
+            <description><![CDATA[{{ plugin.description | safe }}]]></description>
+            <change-notes><![CDATA[{{ plugin.version.notes | safe }}]]></change-notes>
+            <idea-version
+                    {% if plugin.version.since %}since-build="{{ plugin.version.since }}"{% endif %}
+                    {% if plugin.version.until %}until-build="{{ plugin.version.until }}"{% endif %}
+            />
+            {% for depends in plugin.version.depends %}
+                <depends>{{ depends }}</depends>
+            {% endfor %}
+        </plugin>
+    {% endfor %}
+</plugins>

@@ -2,7 +2,7 @@ from typing import Collection
 
 import httpx
 
-from . import iso8601
+from dev_ext_downloader.common import iso8601
 from .data import VSCodeExtension, VSCodeExtensionVersion, VSCodeExtensionFile, VSCodeExtensionProperty
 
 

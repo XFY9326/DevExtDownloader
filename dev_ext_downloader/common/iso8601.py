@@ -8,10 +8,7 @@ class ISO8601ParseError(Exception):
     pass
 
 
-def parse_iso8601(
-        s: str,
-        default_tz: Union[str, pytz.BaseTzInfo] = "UTC"
-) -> datetime:
+def parse_iso8601(s: str, default_tz: Union[str, pytz.BaseTzInfo] = "UTC") -> datetime:
     s = s.replace("Z", "+00:00")
     try:
         dt = datetime.fromisoformat(s)
@@ -43,7 +40,7 @@ def _get_tz(tz: Union[str, pytz.BaseTzInfo]) -> pytz.BaseTzInfo:
 def format_datetime(
         dt: datetime,
         target_tz: Union[str, pytz.BaseTzInfo] = "UTC",
-        fmt: str = "%Y-%m-%d %H:%M:%S %Z%z"
+        fmt: str = "%Y-%m-%d %H:%M:%S %Z%z",
 ) -> str:
     target = _get_tz(target_tz)
     dt_converted = dt.astimezone(target)
@@ -53,7 +50,7 @@ def format_datetime(
 def convert_tz(
         dt: datetime,
         from_tz: Union[str, pytz.BaseTzInfo],
-        to_tz: Union[str, pytz.BaseTzInfo]
+        to_tz: Union[str, pytz.BaseTzInfo],
 ) -> datetime:
     from_tz_obj = _get_tz(from_tz)
     to_tz_obj = _get_tz(to_tz)

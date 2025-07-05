@@ -1,8 +1,6 @@
-# VSIX Downloader
+# Dev ext downloader
 
-Download VSIX packages from Visual Studio Marketplace
-
-**Only support Visual Studio Code Extensions**
+Download extensions from Visual Studio Marketplace and Jetbrains Marketplace
 
 ## Requirements
 
@@ -10,12 +8,11 @@ Python 3.10+
 
 ## Features
 
- - Simply configure to download the latest extension
- - Support custom download platforms and compatible VSCode versions
- - Support for filtering pre-release versions
- - Improving download speed using asyncio
- - Supports incremental download and complete file download
- - Supports generating metadata for downloaded files
+- Simply configure to download the latest extension
+- Improving download speed using asyncio
+- Supports incremental download and complete file download
+- Supports generating metadata for downloaded files
+- Generate simple static html page for downloaded extensions
 
 ## Usage
 
@@ -37,13 +34,27 @@ Init project venv (Optional):
 uv sync
 ```
 
-Set VSIX packages (Modify `main.py`):
+## VSIX Downloader
+
+Download VSIX packages from Visual Studio Marketplace
+
+**Only support Visual Studio Code Extensions**
+
+### Features
+
+- Support custom download platforms and compatible VSCode versions
+- Support for filtering pre-release versions
+
+### Usage
+
+Set VSIX packages (Modify `vsix.py`):
 
 ```python
 from pathlib import Path
+from dev_ext_downloader.vsix import VSCodeExt
 
 # Download dir
-DOWNLOAD_DIR: Path = Path("./downloads")
+DOWNLOAD_DIR: Path = Path("./vsix-vsix")
 
 # Download temp dir
 TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
@@ -89,7 +100,7 @@ INCLUDE_PRERELEASE: bool = False
 # VSIX packages ext id list
 # Example: https://marketplace.visualstudio.com/items?itemName=ms-python.python
 # [ext_id] is ms-python.python
-VSIX_LIST: list[str] = [
+VSIX_LIST: list[str | VSCodeExt] = [
     "ms-python.python"
 ]
 ```
@@ -97,5 +108,76 @@ VSIX_LIST: list[str] = [
 Run script to download all latest compatible extensions:
 
 ```shell
-uv run main.py
+uv run vsix.py
+```
+
+## Jetbrains Downloader
+
+Download Jetbrains plugins from Jetbrains Marketplace
+
+### Features
+
+- Support custom download compatible Jetbrains IDE versions
+- Support generating `updatePlugins.xml` file
+
+### Usage
+
+Set Jetbrains plugins (Modify `jetbrains.py`):
+
+```python
+from pathlib import Path
+from dev_ext_downloader.jetbrains import JetbrainsDef
+
+# Download dir
+DOWNLOAD_DIR: Path = Path("./downloads/jetbrains")
+
+# Download temp dir
+TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
+
+# Task spec path
+TASK_SPEC_PATH: Path = DOWNLOAD_DIR.joinpath("task-spec.json")
+
+# Skip if exists or not
+# If exists, skip download
+SKIP_IF_EXISTS: bool = True
+
+# Only keep latest version
+KEEP_ONLY_LATEST: bool = True
+
+# Download concurrency
+DOWNLOAD_CONCURRENCY: int = 8
+
+# No metadata or not
+# Generate [ext_id.json] before download
+NO_METADATA: bool = False
+
+# Flatten dir or not
+# No flatten dir:
+# [download_dir]
+#     └── [ext_id]
+#         ├── [ext_id.vsix]
+#         └── [ext_id.json]
+# Flatten dir:
+# [download_dir]
+#     ├── [ext_id.vsix]
+#     └── [ext_id.json]
+FLATTEN_DIR: bool = False
+
+# Target build version or None for latest
+# Example: IC-243.22562.13 or IC-243 or 243
+TARGET_BUILD_VERSION: str | None = "IC-243.22562.13"
+
+# Jetbrains plugin id list
+# Example: https://plugins.jetbrains.com/plugin/7495--ignore
+# [ext_id] is '7495'
+PLUGINS_LIST: list[str | JetbrainsDef] = ["7495"]
+
+# For generating updatePlugins.xml
+PLUGINS_DOWNLOAD_BASE_URL: str | None = "http://localhost:8080"
+```
+
+Run script to download all latest compatible extensions:
+
+```shell
+uv run jetbrains.py
 ```

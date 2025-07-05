@@ -2,12 +2,12 @@ import asyncio
 import shutil
 from pathlib import Path
 
-from vsix_downloader import download_latest_extensions
-from vsix_downloader.data import VSCodeExt, VersionFilterOptions, DownloadOptions
-from vsix_downloader.html import generate_index_html
+from dev_ext_downloader.common.models import DownloadOptions
+from dev_ext_downloader.vsix import VSCodeExt, VSCodeExtFilterOptions
+from dev_ext_downloader.vsix import download_latest_extensions, generate_index_html
 
 # Download dir
-DOWNLOAD_DIR: Path = Path("./downloads")
+DOWNLOAD_DIR: Path = Path("./downloads/vsix")
 
 # Download temp dir
 TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
@@ -20,7 +20,7 @@ TASK_SPEC_PATH: Path = DOWNLOAD_DIR.joinpath("task-spec.json")
 SKIP_IF_EXISTS: bool = True
 
 # Only keep latest version
-KEEP_ONLY_LATEST: bool = False
+KEEP_ONLY_LATEST: bool = True
 
 # Download concurrency
 DOWNLOAD_CONCURRENCY: int = 8
@@ -57,10 +57,8 @@ INCLUDE_PRERELEASE: bool = True
 # Example: https://marketplace.visualstudio.com/items?itemName=ms-python.python
 # [ext_id] is ms-python.python
 VSIX_LIST: list[str | VSCodeExt] = [
-    "MS-CEINTL.vscode-language-pack-zh-hans",
     "ms-python.python",
     "ms-python.vscode-pylance",
-    "ms-python.debugpy"
 ]
 
 
@@ -77,7 +75,7 @@ async def main() -> None:
             flatten_dir=FLATTEN_DIR,
             keep_only_latest=KEEP_ONLY_LATEST
         ),
-        default_version_filter_options=VersionFilterOptions(
+        default_filter_options=VSCodeExtFilterOptions(
             target_platform=TARGET_PLATFORM,
             vscode_version=VSCODE_VERSION,
             include_prerelease=INCLUDE_PRERELEASE,

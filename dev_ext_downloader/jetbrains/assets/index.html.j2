@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>JetBrains 插件下载列表</title>
+    <!--suppress CssUnusedSymbol -->
+    <style>
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: "Segoe UI", "PingFang SC", sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .search-bar {
+            max-width: 60vh;
+            margin: 40px auto;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: transform .1s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card details {
+            padding: 16px;
+        }
+
+        summary::-webkit-details-marker,
+        summary::marker {
+            display: none;
+        }
+
+        .summary-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .title-group {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .plugin-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .vendor {
+            font-size: 0.9em;
+            color: #666;
+            margin-right: 8px;
+        }
+
+        summary:hover .plugin-name {
+            color: #007acc;
+        }
+
+        summary::after {
+            content: '▼';
+            font-size: 0.8em;
+            color: #888;
+            transition: transform 0.2s;
+        }
+
+        details[open] summary::after {
+            content: '▲';
+        }
+
+        .tag {
+            background: #e8f0fe;
+            color: #1967d2;
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            margin: 4px 4px 0 0;
+        }
+
+        .description {
+            margin: 10px 0;
+            font-size: 0.95em;
+            color: #555;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+        }
+
+        .description::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .description::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        .version-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .version-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .version-info {
+            flex: 1;
+        }
+
+        .download-link {
+            background: #007acc;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-left: 16px;
+            white-space: nowrap;
+        }
+
+        .download-link:hover {
+            background: #005fa3;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        .pagination button {
+            margin: 0 4px;
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background: #007acc;
+            color: #fff;
+            border-color: #007acc;
+        }
+
+        .pagination button.disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+<h1>JetBrains 插件下载列表</h1>
+<div class="search-bar">
+    <label for="searchInput" class="sr-only">搜索插件名称、发布者、分类或标签</label>
+    <input type="text" id="searchInput" placeholder="搜索插件名称、发布者、分类或标签…">
+</div>
+<div id="cardsContainer"></div>
+<div id="pagination" class="pagination"></div>
+
+<script>
+    /**
+     * @typedef {Object} ExtensionVersion
+     * @property {string} version
+     * @property {string|null} size
+     * @property {string|null} updated_date
+     * @property {string|null} since_build
+     * @property {string|null} until_build
+     * @property {string} file_url
+     */
+    /**
+     * @typedef {Object} ExtensionItem
+     * @property {string} id
+     * @property {string} name
+     * @property {string} description  Raw HTML
+     * @property {string} vendor
+     * @property {string} category
+     * @property {string[]} tags
+     * @property {ExtensionVersion[]} versions
+     */
+    /** @type {ExtensionItem[]} */
+    const items = {{ items | tojson }};
+</script>
+<script>
+    const container = document.getElementById('cardsContainer');
+    const paginationEl = document.getElementById('pagination');
+    /** @type {HTMLInputElement} */
+    const searchInput = document.getElementById('searchInput');
+    const itemsPerPage = 50;
+    let currentPage = 1;
+    let filteredItems = items.slice();
+
+    function createCard(item) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        const searchText = [item.name, item.vendor, item.id, ...(item.category || []), ...(item.tags || [])].join(' ').toLowerCase();
+        card.setAttribute('data-search', searchText);
+
+        const details = document.createElement('details');
+        const summary = document.createElement('summary');
+        summary.className = 'summary-header';
+
+        const titleGroup = document.createElement('span');
+        titleGroup.className = 'title-group';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'plugin-name';
+        nameSpan.textContent = item.name;
+        const vendorSpan = document.createElement('span');
+        vendorSpan.className = 'vendor';
+        vendorSpan.textContent = `by ${item.vendor}`;
+        titleGroup.append(nameSpan, vendorSpan);
+        if (item.category) {
+            const catTag = document.createElement('span');
+            catTag.className = 'tag';
+            catTag.textContent = item.category;
+            titleGroup.append(catTag);
+        }
+        for (const t of item.tags || []) {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = t;
+            titleGroup.appendChild(tag);
+        }
+        summary.appendChild(titleGroup);
+        details.appendChild(summary);
+
+        const idLine = document.createElement('p');
+        idLine.className = 'description';
+        idLine.textContent = `ID：${item.id}`;
+        details.appendChild(idLine);
+
+        const desc = document.createElement('div');
+        desc.className = 'description';
+        desc.innerHTML = item.description;
+        details.appendChild(desc);
+
+        const ul = document.createElement('ul');
+        ul.className = 'version-list';
+        item.versions.forEach(ver => {
+            const li = document.createElement('li');
+            li.className = 'version-item';
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'version-info';
+            infoDiv.innerHTML = `
+                <strong>${ver.version}</strong> ${ver.size ? `(${ver.size})` : ''}<br>
+                更新时间：${ver.updated_date || '-'}<br>
+                兼容：${ver.since_build || '-'} - ${ver.until_build || '-'}
+            `;
+            const link = document.createElement('a');
+            link.className = 'download-link';
+            link.href = ver.file_url;
+            link.download = '';
+            link.textContent = '下载';
+            li.append(infoDiv, link);
+            ul.appendChild(li);
+        });
+        details.appendChild(ul);
+        card.appendChild(details);
+        return card;
+    }
+
+    function renderPage(page) {
+        currentPage = page;
+        const start = (page - 1) * itemsPerPage;
+        const end = start + itemsPerPage;
+        container.innerHTML = '';
+        filteredItems.slice(start, end).forEach(item => container.appendChild(createCard(item)));
+        renderPagination();
+    }
+
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
+        paginationEl.innerHTML = '';
+        const makeBtn = (text, page, disabled) => {
+            const btn = document.createElement('button');
+            btn.textContent = text;
+            if (disabled) btn.classList.add('disabled');
+            if (page === currentPage) btn.classList.add('active');
+            if (!disabled) btn.addEventListener('click', () => renderPage(page));
+            return btn;
+        };
+        paginationEl.append(makeBtn('<<', 1, currentPage === 1));
+        paginationEl.append(makeBtn('<', Math.max(1, currentPage - 1), currentPage === 1));
+
+        let pages;
+        if (totalPages <= 7) pages = Array.from({length: totalPages}, (_, i) => i + 1);
+        else if (currentPage <= 4) pages = [1, 2, 3, 4, 5, '...', totalPages];
+        else if (currentPage >= totalPages - 3) pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        else pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+
+        pages.forEach(p => {
+            if (p === '...') {
+                const span = document.createElement('span');
+                span.textContent = '...';
+                paginationEl.appendChild(span);
+            } else paginationEl.appendChild(makeBtn(p, p));
+        });
+        paginationEl.append(makeBtn('>', Math.min(totalPages, currentPage + 1), currentPage === totalPages));
+        paginationEl.append(makeBtn('>>', totalPages, currentPage === totalPages));
+    }
+
+    searchInput.addEventListener('input', () => {
+        const keys = searchInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+        filteredItems = items.filter(item => {
+            const text = [item.name, item.vendor, item.id, ...(item.category || []), ...(item.tags || [])].join(' ').toLowerCase();
+            return keys.every(k => text.includes(k));
+        });
+        renderPage(1);
+    });
+
+    renderPage(1);
+</script>
+</body>
+</html>
