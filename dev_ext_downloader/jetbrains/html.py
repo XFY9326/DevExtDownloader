@@ -2,12 +2,14 @@ from pathlib import Path
 from typing import Any
 
 import aiofile
+import aioshutil
 from jinja2 import Template
 
 from .utils import iter_meta_data, get_download_file_path
 from ..common.tools import pretty_bytes
 
 _TEMPLATE_INDEX_PATH: Path = Path(__file__).parent / "assets" / "index.html.j2"
+_TEMPLATE_FAVICON_PATH: Path = Path(__file__).parent / "assets" / "favicon.ico"
 
 
 async def load_plugin_render_params(
@@ -57,7 +59,8 @@ async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> P
 
     render_params = await load_plugin_render_params(download_dir, is_flatten)
     xml_content = await template.render_async(items=render_params)
-    update_plugins_path = download_dir / "index.html"
-    async with aiofile.async_open(update_plugins_path, "w", encoding="utf-8") as f:
+    index_html_path = download_dir / "index.html"
+    async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:
         await f.write(xml_content)
-    return update_plugins_path
+    await aioshutil.copyfile(_TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name))
+    return index_html_path

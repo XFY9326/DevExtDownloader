@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, AsyncGenerator
 
 import aiofile
+import aioshutil
 from jinja2 import Template
 
 from dev_ext_downloader.common.tools import iter_meta_data_json
@@ -9,6 +10,7 @@ from .data import VSCodeExtension
 from .utils import get_download_file_name
 
 _TEMPLATE_INDEX_PATH: Path = Path(__file__).parent / "assets" / "index.html.j2"
+_TEMPLATE_FAVICON_PATH: Path = Path(__file__).parent / "assets" / "favicon.ico"
 
 
 async def _iter_meta_data(
@@ -76,4 +78,5 @@ async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> P
     index_html_path = download_dir / "index.html"
     async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:
         await f.write(html_content)
+    await aioshutil.copyfile(_TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name))
     return index_html_path

@@ -18,6 +18,14 @@ from .data import (
 from .utils import get_download_file_name, get_latest_extension_version
 
 
+def _merge_versions(
+        new_version: VSCodeExtensionVersion,
+        old_versions: tuple[VSCodeExtensionVersion, ...]
+) -> list[VSCodeExtensionVersion]:
+    old_versions = [i for i in old_versions if i.version != new_version.version]
+    return [new_version] + old_versions
+
+
 async def _run_download_task(
         client: httpx.AsyncClient,
         target_dir: Path,
@@ -54,17 +62,17 @@ async def _run_download_task(
                 try:
                     f.seek(0)
                     exists_extension = VSCodeExtension.from_json(await f.read())
-                    version_list = [version, *exists_extension.versions]
+                    version_list = _merge_versions(version, exists_extension.versions)
                 except Exception as e:
                     print(f"Warning: Can't load old meta data for {extension.unified_name}.", e)
                     exists_extension = None
                     version_list = [version]
                 if exists_extension and download_options.keep_only_latest:
-                    if download_options.keep_only_latest:
-                        for v in exists_extension.versions:
-                            old_file_path = extension_dir / get_download_file_name(exists_extension, v)
-                            if old_file_path != download_file_path:
-                                old_file_path.unlink(missing_ok=True)
+                    for v in exists_extension.versions:
+                        old_file_path = extension_dir / get_download_file_name(exists_extension, v)
+                        if old_file_path != download_file_path:
+                            old_file_path.unlink(missing_ok=True)
+                    version_list = [version]
             version_list.sort(key=lambda i: i.sort_key, reverse=True)
             download_meta = VSCodeExtension(
                 extension_id=extension.extension_id,
