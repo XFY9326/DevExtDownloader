@@ -54,13 +54,17 @@ async def load_plugin_render_params(
 async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> Path:
     if not download_dir.is_dir():
         raise NotADirectoryError(download_dir)
+
     async with aiofile.async_open(_TEMPLATE_INDEX_PATH, "r", encoding="utf-8") as f:
         template = Template(await f.read(), autoescape=True, enable_async=True)
 
     render_params = await load_plugin_render_params(download_dir, is_flatten)
     xml_content = await template.render_async(items=render_params)
+
     index_html_path = download_dir / "index.html"
     async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:
         await f.write(xml_content)
+
     await aioshutil.copyfile(_TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name))
+
     return index_html_path

@@ -51,13 +51,16 @@ Set VSIX packages (Modify `vsix.py`):
 
 ```python
 from pathlib import Path
-from dev_ext_downloader.vsix import VSCodeExt
+from dev_ext_downloader.vscode import VSCodeExt
 
 # Download dir
 DOWNLOAD_DIR: Path = Path("./vsix-vsix")
 
 # Download temp dir
-TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
+TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"
+
+# Task spec path
+TASK_SPEC_PATH: Path = DOWNLOAD_DIR / "task-spec.json"
 
 # Skip if exists or not
 # If exists, skip download
@@ -109,7 +112,7 @@ VSIX_LIST: list[str | VSCodeExt] = [
 Run script to download all latest compatible extensions:
 
 ```shell
-uv run vsix.py
+uv run vscode.py
 ```
 
 ## Jetbrains Downloader
@@ -133,10 +136,10 @@ from dev_ext_downloader.jetbrains import JetbrainsDef
 DOWNLOAD_DIR: Path = Path("./downloads/jetbrains")
 
 # Download temp dir
-TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
+TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"
 
 # Task spec path
-TASK_SPEC_PATH: Path = DOWNLOAD_DIR.joinpath("task-spec.json")
+TASK_SPEC_PATH: Path = DOWNLOAD_DIR / "task-spec.json"
 
 # Skip if exists or not
 # If exists, skip download
@@ -156,13 +159,13 @@ NO_METADATA: bool = False
 # Flatten dir or not
 # No flatten dir:
 # [download_dir]
-#     └── [ext_id]
-#         ├── [ext_id.vsix]
-#         └── [ext_id.json]
+#     └── [plugin_id]
+#         ├── [plugin_id_fixed.zip]
+#         └── [plugin_id.json]
 # Flatten dir:
 # [download_dir]
-#     ├── [ext_id.vsix]
-#     └── [ext_id.json]
+#     ├── [plugin_id_fixed.zip]
+#     └── [plugin_id.json]
 FLATTEN_DIR: bool = False
 
 # Target build version or None for latest

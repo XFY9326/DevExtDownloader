@@ -15,7 +15,7 @@ from .data import (
     VSCodeExtensionVersion,
     VSCodeExtFilterOptions,
 )
-from .utils import get_download_file_name, get_latest_extension_version
+from .utils import get_download_file_name, get_latest_extension_version, get_download_file_dir
 
 
 def _merge_versions(
@@ -34,10 +34,7 @@ async def _run_download_task(
         version: VSCodeExtensionVersion,
         download_options: DownloadOptions,
 ) -> None:
-    if download_options.flatten_dir:
-        extension_dir = target_dir
-    else:
-        extension_dir = target_dir / extension.unified_name
+    extension_dir = get_download_file_dir(target_dir, download_options.flatten_dir, extension)
     extension_dir.mkdir(parents=True, exist_ok=True)
 
     download_file_path = await download_file(
@@ -108,8 +105,8 @@ async def _download_task(
 
 async def download_latest_extensions(
         query_ext: Collection[str | VSCodeExt],
-        target_dir: Path = Path("./downloads/vsix"),
-        temp_dir: Path = Path("./downloads/vsix/.temp"),
+        target_dir: Path = Path("./downloads/vscode"),
+        temp_dir: Path | None = None,
         concurrency: int = 4,
         task_spec_path: Path | None = None,
         default_download_options: DownloadOptions = DownloadOptions(),
@@ -134,6 +131,7 @@ async def download_latest_extensions(
             )
         )
 
+    temp_dir = temp_dir if temp_dir is not None else (target_dir / ".temp")
     target_dir.mkdir(parents=True, exist_ok=True)
     temp_dir.mkdir(parents=True, exist_ok=True)
 

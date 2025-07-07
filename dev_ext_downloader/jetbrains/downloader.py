@@ -8,7 +8,7 @@ from tenacity import retry, stop_after_attempt, wait_incrementing, retry_if_exce
 from tqdm.asyncio import tqdm
 
 from dev_ext_downloader.common.models import DownloadOptions
-from dev_ext_downloader.common.tools import download_file, get_full_extension
+from dev_ext_downloader.common.tools import download_file, get_file_name_last_extension
 from .api import JetbrainsPluginAPI
 from .data import (
     JetbrainsDef,
@@ -16,7 +16,7 @@ from .data import (
     JetbrainsDownloadPlugin,
     JetbrainsDownloadVersion,
 )
-from .utils import get_download_file_name
+from .utils import get_download_file_name, get_download_file_dir
 
 
 def _merge_versions(
@@ -34,17 +34,14 @@ async def _run_download_task(
         plugin: JetbrainsPlugin,
         download_options: DownloadOptions,
 ) -> None:
-    if download_options.flatten_dir:
-        plugin_dir = target_dir
-    else:
-        plugin_dir = target_dir / plugin.id
+    plugin_dir = get_download_file_dir(target_dir, download_options.flatten_dir, plugin.id)
     plugin_dir.mkdir(parents=True, exist_ok=True)
 
     download_file_path = await download_file(
         client=client,
         url=plugin.version.download_url,
         target_dir=plugin_dir,
-        file_name=lambda n: get_download_file_name(plugin, get_full_extension(n)),
+        file_name=lambda n: get_download_file_name(plugin, get_file_name_last_extension(n)),
         temp_dir=temp_dir,
         skip_if_exists=download_options.skip_if_exists,
     )
@@ -136,7 +133,7 @@ async def _load_data_task(
 async def download_latest_extensions(
         plugins_def: Collection[str | JetbrainsDef],
         target_dir: Path = Path("./downloads/jetbrains/"),
-        temp_dir: Path = Path("./downloads/jetbrains/.temp"),
+        temp_dir: Path | None = None,
         concurrency: int = 4,
         task_spec_path: Path | None = None,
         default_target_build_version: str | None = None,
@@ -162,6 +159,7 @@ async def download_latest_extensions(
             )
         )
 
+    temp_dir = temp_dir if temp_dir is not None else (target_dir / ".temp")
     target_dir.mkdir(parents=True, exist_ok=True)
     temp_dir.mkdir(parents=True, exist_ok=True)
 

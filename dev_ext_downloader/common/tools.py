@@ -3,7 +3,8 @@ import os
 import re
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Generator, Mapping
+from urllib.parse import urljoin, urlparse, urlunparse, quote, urlencode
 
 import aiofile
 import aioshutil
@@ -117,5 +118,31 @@ def pretty_bytes(num_bytes: int, precision: int = 2) -> str:
     return f"{num_bytes:.{precision}f} {units[index]}"
 
 
-def get_full_extension(filename: str) -> str:
-    return "".join(Path(filename).suffixes)
+def get_file_name_last_extension(filename: str) -> str:
+    return "".join(Path(filename).suffixes[-1])
+
+
+def build_url(
+        base: str,
+        path: str = "",
+        params: Mapping[str, Any] | None = None
+) -> str:
+    safe_path = quote(path, safe="/")
+
+    url = urljoin(base, safe_path)
+
+    if params:
+        query = urlencode(params, doseq=True)
+        parsed = urlparse(url)
+        url = str(urlunparse(parsed._replace(query=query)))
+
+    return url
+
+
+# noinspection PyBroadException
+def is_valid_http_url(url: str) -> bool:
+    try:
+        result = urlparse(url)
+        return all([result.scheme in ("http", "https"), result.netloc])
+    except:
+        return False

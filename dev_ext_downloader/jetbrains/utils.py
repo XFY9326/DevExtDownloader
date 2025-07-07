@@ -28,18 +28,21 @@ def get_download_file_name(plugin: JetbrainsPlugin, extension: str) -> str:
     return f"{prefix}_{suffix}{extension}"
 
 
+def get_download_file_dir(
+        download_dir: Path,
+        is_flatten: bool,
+        plugin_id: str
+) -> Path:
+    if is_flatten:
+        return download_dir
+    else:
+        return download_dir / plugin_id
+
+
 def get_download_file_path(
         download_dir: Path,
         is_flatten: bool,
         plugin_meta_data: JetbrainsDownloadPlugin,
         plugin_version: JetbrainsDownloadVersion
 ) -> Path:
-    if is_flatten:
-        file_path = download_dir / plugin_version.download_file_name
-    else:
-        file_path = (
-                download_dir
-                / plugin_meta_data.id
-                / plugin_version.download_file_name
-        )
-    return file_path
+    return get_download_file_dir(download_dir, is_flatten, plugin_meta_data.id) / plugin_version.download_file_name

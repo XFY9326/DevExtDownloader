@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import semantic_version
 
 from .data import VSCodeExtension, VSCodeExtensionVersion, VSCodeExtFilterOptions
@@ -12,6 +14,17 @@ def get_download_file_name(
         )
     else:
         return f"{extension.unified_name}-{version.version}.vsix"
+
+
+def get_download_file_dir(
+        download_dir: Path,
+        is_flatten: bool,
+        extension: VSCodeExtension
+) -> Path:
+    if is_flatten:
+        return download_dir
+    else:
+        return download_dir / extension.unified_name
 
 
 def get_latest_extension_version(

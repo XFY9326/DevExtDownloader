@@ -7,7 +7,7 @@ from jinja2 import Template
 
 from dev_ext_downloader.common.tools import iter_meta_data_json
 from .data import VSCodeExtension
-from .utils import get_download_file_name
+from .utils import get_download_file_name, get_download_file_dir
 
 _TEMPLATE_INDEX_PATH: Path = Path(__file__).parent / "assets" / "index.html.j2"
 _TEMPLATE_FAVICON_PATH: Path = Path(__file__).parent / "assets" / "favicon.ico"
@@ -32,13 +32,8 @@ async def _load_extensions_render_params(
         versions: list[dict[str, Any]] = []
         for ext_version in ext_meta_data.versions:
             download_file_name = get_download_file_name(ext_meta_data, ext_version)
-            if is_flatten:
-                file_path = download_dir / download_file_name
-            else:
-                file_path = (
-                        download_dir / ext_meta_data.unified_name / download_file_name
-                )
-
+            download_file_dir = get_download_file_dir(download_dir, is_flatten, ext_meta_data)
+            file_path = download_file_dir / download_file_name
             if file_path.is_file():
                 versions.append(
                     {
@@ -71,12 +66,17 @@ async def _load_extensions_render_params(
 async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> Path:
     if not download_dir.is_dir():
         raise NotADirectoryError(download_dir)
+
     async with aiofile.async_open(_TEMPLATE_INDEX_PATH, "r", encoding="utf-8") as f:
         template = Template(await f.read(), autoescape=True, enable_async=True)
+
     render_params = await _load_extensions_render_params(download_dir, is_flatten)
     html_content = await template.render_async(items=render_params)
+
     index_html_path = download_dir / "index.html"
     async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:
         await f.write(html_content)
+
     await aioshutil.copyfile(_TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name))
+
     return index_html_path

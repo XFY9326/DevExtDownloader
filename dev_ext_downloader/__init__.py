@@ -1,2 +1,2 @@
 from . import jetbrains
-from . import vsix
+from . import vscode

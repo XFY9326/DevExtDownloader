@@ -13,10 +13,10 @@ from dev_ext_downloader.jetbrains import (
 DOWNLOAD_DIR: Path = Path("./downloads/jetbrains")
 
 # Download temp dir
-TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
+TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"
 
 # Task spec path
-TASK_SPEC_PATH: Path = DOWNLOAD_DIR.joinpath("task-spec.json")
+TASK_SPEC_PATH: Path = DOWNLOAD_DIR / "task-spec.json"
 
 # Skip if exists or not
 # If exists, skip download
@@ -36,13 +36,13 @@ NO_METADATA: bool = False
 # Flatten dir or not
 # No flatten dir:
 # [download_dir]
-#     └── [ext_id]
-#         ├── [ext_id.vsix]
-#         └── [ext_id.json]
+#     └── [plugin_id]
+#         ├── [plugin_id_fixed.zip]
+#         └── [plugin_id.json]
 # Flatten dir:
 # [download_dir]
-#     ├── [ext_id.vsix]
-#     └── [ext_id.json]
+#     ├── [plugin_id_fixed.zip]
+#     └── [plugin_id.json]
 FLATTEN_DIR: bool = False
 
 # Target build version or None for latest

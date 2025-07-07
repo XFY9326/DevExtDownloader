@@ -3,17 +3,17 @@ import shutil
 from pathlib import Path
 
 from dev_ext_downloader.common.models import DownloadOptions
-from dev_ext_downloader.vsix import VSCodeExt, VSCodeExtFilterOptions
-from dev_ext_downloader.vsix import download_latest_extensions, generate_index_html
+from dev_ext_downloader.vscode import VSCodeExt, VSCodeExtFilterOptions
+from dev_ext_downloader.vscode import download_latest_extensions, generate_index_html
 
 # Download dir
-DOWNLOAD_DIR: Path = Path("./downloads/vsix")
+DOWNLOAD_DIR: Path = Path("./downloads/vscode")
 
 # Download temp dir
-TEMP_DIR: Path = DOWNLOAD_DIR.joinpath("./.temp")
+TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"
 
 # Task spec path
-TASK_SPEC_PATH: Path = DOWNLOAD_DIR.joinpath("task-spec.json")
+TASK_SPEC_PATH: Path = DOWNLOAD_DIR / "task-spec.json"
 
 # Skip if exists or not
 # If exists, skip download

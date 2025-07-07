@@ -4,6 +4,7 @@ from typing import Any
 import aiofile
 from jinja2 import Template
 
+from dev_ext_downloader.common.tools import build_url, is_valid_http_url
 from .utils import iter_meta_data, get_download_file_path
 
 _TEMPLATE_XML_PATH: Path = Path(__file__).parent / "assets" / "updatePlugins.xml.j2"
@@ -20,10 +21,9 @@ async def _load_plugin_render_params(
         for plugin_version in plugin_meta_data.versions:
             file_path = get_download_file_path(download_dir, is_flatten, plugin_meta_data, plugin_version)
             if file_path.is_file():
-                file_url = (
-                        base_url.rstrip("/")
-                        + "/"
-                        + str(file_path.relative_to(download_dir).as_posix()).lstrip("/")
+                file_url = build_url(
+                    base=base_url.rstrip("/"),
+                    path=str(file_path.relative_to(download_dir).as_posix()).lstrip("/")
                 )
                 latest_version = {
                     "version": plugin_version.version,
@@ -55,14 +55,19 @@ async def _load_plugin_render_params(
 async def generate_update_plugins_xml(
         base_url: str, download_dir: Path, is_flatten: bool = False
 ) -> Path:
+    if not is_valid_http_url(base_url):
+        raise ValueError(f"Invalid http base url: {base_url}")
     if not download_dir.is_dir():
         raise NotADirectoryError(download_dir)
+
     async with aiofile.async_open(_TEMPLATE_XML_PATH, "r", encoding="utf-8") as f:
         template = Template(await f.read(), autoescape=True, enable_async=True)
 
     render_params = await _load_plugin_render_params(base_url, download_dir, is_flatten)
     xml_content = await template.render_async(plugins=render_params)
+
     update_plugins_path = download_dir / "updatePlugins.xml"
     async with aiofile.async_open(update_plugins_path, "w", encoding="utf-8") as f:
         await f.write(xml_content)
+
     return update_plugins_path
