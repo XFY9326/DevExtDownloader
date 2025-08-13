@@ -5,8 +5,8 @@ import aiofile
 import aioshutil
 from jinja2 import Template
 
+from dev_ext_downloader.common.tools import build_url, is_valid_http_url, pretty_bytes
 from .utils import iter_meta_data, get_download_file_path
-from ..common.tools import pretty_bytes
 
 _TEMPLATE_INDEX_PATH: Path = Path(__file__).parent / "assets" / "index.html.j2"
 _TEMPLATE_FAVICON_PATH: Path = Path(__file__).parent / "assets" / "favicon.ico"
@@ -51,7 +51,9 @@ async def load_plugin_render_params(
     return results
 
 
-async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> Path:
+async def generate_index_html(base_url: str | None, download_dir: Path, is_flatten: bool = False) -> Path:
+    if base_url is not None and not is_valid_http_url(base_url):
+        raise ValueError(f"Invalid http base url: {base_url}")
     if not download_dir.is_dir():
         raise NotADirectoryError(download_dir)
 
@@ -59,7 +61,10 @@ async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> P
         template = Template(await f.read(), autoescape=True, enable_async=True)
 
     render_params = await load_plugin_render_params(download_dir, is_flatten)
-    xml_content = await template.render_async(items=render_params)
+    xml_content = await template.render_async(
+        items=render_params,
+        update_plugins_xml_url=build_url(base_url, "updatePlugins.xml") if base_url is not None else None
+    )
 
     index_html_path = download_dir / "index.html"
     async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:

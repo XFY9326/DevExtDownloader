@@ -195,9 +195,107 @@
             opacity: 0.5;
             cursor: default;
         }
+
+        /* 自定义源仓库按钮样式 */
+        #customSourceBtn {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        #customSourceBtn:hover {
+            background: #005fa3;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+        }
+
+        .modal-content ol {
+            padding-left: 20px;
+        }
+
+        .modal-content li {
+            margin-bottom: 8px;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .modal-buttons {
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .modal-button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+
+        .copy-button {
+            background: #007acc;
+            color: white;
+        }
+
+        .close-button {
+            background: #ccc;
+            color: black;
+        }
+
+        .copy-button:hover {
+            background: #005fa3;
+        }
+
+        .close-button:hover {
+            background: #bbb;
+        }
     </style>
 </head>
 <body>
+<!-- 右上角按钮 -->
+<div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+    {% if update_plugins_xml_url %}
+        <button id="customSourceBtn">自定义插件源</button>
+    {% endif %}
+</div>
+
 <h1>JetBrains 插件下载列表</h1>
 <div class="search-bar">
     <label for="searchInput" class="sr-only">搜索插件名称、发布者、分类或标签</label>
@@ -205,6 +303,28 @@
 </div>
 <div id="cardsContainer"></div>
 <div id="pagination" class="pagination"></div>
+
+<!-- 模态框 -->
+{% if update_plugins_xml_url %}
+    <div id="customSourceModal" class="modal">
+        <div class="modal-content">
+            <h2>添加自定义插件源</h2>
+            <p>在 IntelliJ IDEA 中添加自定义插件源的方法如下：</p>
+            <ol>
+                <li>打开 <strong>Settings</strong>（Windows/Linux）或 <strong>Preferences</strong>（macOS）</li>
+                <li>导航到 <strong>Plugins</strong></li>
+                <li>点击右上角的齿轮图标，选择 <strong>Manage Plugin Repositories...</strong></li>
+                <li>点击 <strong>+</strong> 添加以下 URL：</li>
+            </ol>
+            <label for="pluginUrlInput">URL</label>
+            <input type="text" id="pluginUrlInput" value="{{ update_plugins_xml_url }}" readonly class="url-input">
+            <div class="modal-buttons">
+                <button id="copyUrlBtn" class="modal-button copy-button">复制 URL</button>
+                <button id="closeModalBtn" class="modal-button close-button">关闭</button>
+            </div>
+        </div>
+    </div>
+{% endif %}
 
 <script>
     /**
@@ -357,6 +477,39 @@
     });
 
     renderPage(1);
+
+    // 自定义源仓库模态框逻辑
+    {% if update_plugins_xml_url %}
+        const modal = document.getElementById('customSourceModal');
+        const btn = document.getElementById('customSourceBtn');
+        const closeBtn = document.getElementById('closeModalBtn');
+        const copyBtn = document.getElementById('copyUrlBtn');
+        const urlInput = document.getElementById('pluginUrlInput');
+
+        // 显示模态框
+        btn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+        });
+
+        // 关闭模态框
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // 点击背景关闭
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // 复制 URL
+        copyBtn.addEventListener('click', () => {
+            urlInput.select();
+            document.execCommand('copy');
+            alert('URL 已复制到剪贴板');
+        });
+    {% endif %}
 </script>
 </body>
 </html>

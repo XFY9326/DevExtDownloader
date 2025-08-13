@@ -78,6 +78,7 @@ async def main() -> None:
     )
     if not NO_METADATA:
         await generate_index_html(
+            base_url=PLUGINS_DOWNLOAD_BASE_URL,
             download_dir=DOWNLOAD_DIR,
             is_flatten=FLATTEN_DIR,
         )
