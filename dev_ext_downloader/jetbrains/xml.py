@@ -22,7 +22,7 @@ async def _load_plugin_render_params(
             file_path = get_download_file_path(download_dir, is_flatten, plugin_meta_data, plugin_version)
             if file_path.is_file():
                 file_url = build_url(
-                    base=base_url.rstrip("/"),
+                    base=base_url if base_url.endswith("/") else f"{base_url}/",
                     path=str(file_path.relative_to(download_dir).as_posix()).lstrip("/")
                 )
                 latest_version = {

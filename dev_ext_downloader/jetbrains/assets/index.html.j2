@@ -290,11 +290,11 @@
 </head>
 <body>
 <!-- 右上角按钮 -->
-<div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-    {% if update_plugins_xml_url %}
+{% if update_plugins_xml_url %}
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
         <button id="customSourceBtn">自定义插件源</button>
-    {% endif %}
-</div>
+    </div>
+{% endif %}
 
 <h1>JetBrains 插件下载列表</h1>
 <div class="search-bar">
@@ -480,10 +480,12 @@
 
     // 自定义源仓库模态框逻辑
     {% if update_plugins_xml_url %}
+        /** @type {HTMLElement} */
         const modal = document.getElementById('customSourceModal');
         const btn = document.getElementById('customSourceBtn');
         const closeBtn = document.getElementById('closeModalBtn');
         const copyBtn = document.getElementById('copyUrlBtn');
+        /** @type {HTMLInputElement} */
         const urlInput = document.getElementById('pluginUrlInput');
 
         // 显示模态框

@@ -63,7 +63,10 @@ async def generate_index_html(base_url: str | None, download_dir: Path, is_flatt
     render_params = await load_plugin_render_params(download_dir, is_flatten)
     xml_content = await template.render_async(
         items=render_params,
-        update_plugins_xml_url=build_url(base_url, "updatePlugins.xml") if base_url is not None else None
+        update_plugins_xml_url=build_url(
+            base=base_url if base_url.endswith("/") else f"{base_url}/",
+            path="updatePlugins.xml"
+        ) if base_url is not None else None
     )
 
     index_html_path = download_dir / "index.html"
