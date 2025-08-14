@@ -248,16 +248,16 @@
         }
 
         .url-input {
-            width: 100%;
+            width: 96%;
             padding: 8px;
-            margin-top: 10px;
+            margin-top: 4px;
             border: 1px solid #ccc;
             border-radius: 4px;
             font-family: monospace;
         }
 
         .modal-buttons {
-            margin-top: 10px;
+            margin-top: 20px;
             text-align: right;
         }
 
@@ -314,9 +314,8 @@
                 <li>打开 <strong>Settings</strong>（Windows/Linux）或 <strong>Preferences</strong>（macOS）</li>
                 <li>导航到 <strong>Plugins</strong></li>
                 <li>点击右上角的齿轮图标，选择 <strong>Manage Plugin Repositories...</strong></li>
-                <li>点击 <strong>+</strong> 添加以下 URL：</li>
+                <li>点击 <strong>+</strong> 添加以下 <label for="pluginUrlInput">URL</label>：</li>
             </ol>
-            <label for="pluginUrlInput">URL</label>
             <input type="text" id="pluginUrlInput" value="{{ update_plugins_xml_url }}" readonly class="url-input">
             <div class="modal-buttons">
                 <button id="copyUrlBtn" class="modal-button copy-button">复制 URL</button>
