@@ -7,6 +7,7 @@ import httpx
 from tqdm.asyncio import tqdm
 
 from dev_ext_downloader.common.models import DownloadOptions
+from dev_ext_downloader.common.token_locker import TokenLock
 from dev_ext_downloader.common.tools import download_file
 from .api import VSCodeExtensionAPI
 from .data import (
@@ -15,14 +16,20 @@ from .data import (
     VSCodeExtensionVersion,
     VSCodeExtFilterOptions,
 )
-from .utils import get_download_file_name, get_latest_extension_version, get_download_file_dir
+from .utils import get_download_file_name, get_latest_extension_versions, get_download_file_dir
+
+_DOWNLOAD_META_TOKEN_LOCK = TokenLock()
 
 
 def _merge_versions(
         new_version: VSCodeExtensionVersion,
         old_versions: tuple[VSCodeExtensionVersion, ...]
 ) -> list[VSCodeExtensionVersion]:
-    old_versions = [i for i in old_versions if i.version != new_version.version]
+    old_versions = [
+        i
+        for i in old_versions
+        if i.version != new_version.version or i.target_platform != new_version.target_platform
+    ]
     return [new_version] + old_versions
 
 
@@ -37,7 +44,7 @@ async def _run_download_task(
     extension_dir = get_download_file_dir(target_dir, download_options.flatten_dir, extension)
     extension_dir.mkdir(parents=True, exist_ok=True)
 
-    download_file_path = await download_file(
+    await download_file(
         client=client,
         url=version.package_url,
         target_dir=extension_dir,
@@ -51,41 +58,48 @@ async def _run_download_task(
         if meta_data_path.is_file():
             meta_data_path.unlink(missing_ok=True)
     else:
-        has_old_meta_data = meta_data_path.is_file()
-        async with aiofile.async_open(meta_data_path, "a+", encoding="utf-8") as f:
-            if not has_old_meta_data:
-                version_list = [version]
-            else:
-                try:
-                    f.seek(0)
-                    exists_extension = VSCodeExtension.from_json(await f.read())
-                    version_list = _merge_versions(version, exists_extension.versions)
-                except Exception as e:
-                    print(f"Warning: Can't load old meta data for {extension.unified_name}.", e)
-                    exists_extension = None
+        async with _DOWNLOAD_META_TOKEN_LOCK.lock(str(meta_data_path)):
+            async with aiofile.async_open(meta_data_path, "a+", encoding="utf-8") as f:
+                has_old_meta_data = meta_data_path.is_file()
+                version_list: list[VSCodeExtensionVersion]
+                if not has_old_meta_data:
                     version_list = [version]
-                if exists_extension and download_options.keep_only_latest:
-                    for v in exists_extension.versions:
-                        old_file_path = extension_dir / get_download_file_name(exists_extension, v)
-                        if old_file_path != download_file_path:
+                else:
+                    try:
+                        f.seek(0)
+                        exists_extension = VSCodeExtension.from_json(await f.read())
+                        version_list = _merge_versions(version, exists_extension.versions)
+                    except Exception as e:
+                        print(f"Downloader warning: Can't load old meta data for {extension.unified_name}.", e)
+                        exists_extension = None
+                        version_list = [version]
+                    if exists_extension and download_options.keep_only_latest:
+                        outdated_versions: list[VSCodeExtensionVersion] = sorted([
+                            v
+                            for v in version_list
+                            if v.target_platform == version.target_platform
+                        ], key=lambda i: i.sort_key, reverse=True)[1:]
+                        for v in outdated_versions:
+                            old_file_path = extension_dir / get_download_file_name(exists_extension, v)
                             old_file_path.unlink(missing_ok=True)
-                    version_list = [version]
-            version_list.sort(key=lambda i: i.sort_key, reverse=True)
-            download_meta = VSCodeExtension(
-                extension_id=extension.extension_id,
-                extension_name=extension.extension_name,
-                display_name=extension.display_name,
-                publisher_id=extension.publisher_id,
-                publisher_name=extension.publisher_name,
-                publisher_display_name=extension.publisher_display_name,
-                short_description=extension.short_description,
-                categories=extension.categories,
-                versions=tuple(version_list),
-            )
-            await f.file.truncate(0)
-            f.seek(0)
-            await f.write(download_meta.to_json(indent=2, ensure_ascii=False))
-            await f.flush(sync_metadata=True)
+                            version_list.remove(v)
+
+                version_list.sort(key=lambda i: i.sort_key, reverse=True)
+                download_meta = VSCodeExtension(
+                    extension_id=extension.extension_id,
+                    extension_name=extension.extension_name,
+                    display_name=extension.display_name,
+                    publisher_id=extension.publisher_id,
+                    publisher_name=extension.publisher_name,
+                    publisher_display_name=extension.publisher_display_name,
+                    short_description=extension.short_description,
+                    categories=extension.categories,
+                    versions=tuple(version_list),
+                )
+                await f.file.truncate(0)
+                f.seek(0)
+                await f.write(download_meta.to_json(indent=2, ensure_ascii=False))
+                await f.flush(sync_metadata=True)
 
 
 async def _download_task(
@@ -145,31 +159,32 @@ async def download_latest_extensions(
             [i.lower() for i in extensions.keys()]
         )
         if len(missing_ext_set) > 0:
-            print(f"Warning: No extension found for {', '.join(missing_ext_set)}")
+            print(f"Downloader warning: No extension found for {', '.join(missing_ext_set)}")
 
         download_tasks = []
         semaphore = asyncio.Semaphore(concurrency)
         for ext_name, extension in extensions.items():
-            version = get_latest_extension_version(
+            versions = get_latest_extension_versions(
                 extension=extension,
                 version_filter_options=ext_spec_dict[ext_name].filter_options,
             )
-            if version is not None:
-                download_tasks.append(
-                    asyncio.create_task(
-                        _download_task(
-                            semaphore=semaphore,
-                            client=client,
-                            target_dir=target_dir,
-                            temp_dir=temp_dir,
-                            extension=extension,
-                            version=version,
-                            download_options=ext_spec_dict[ext_name].download_options,
+            if len(versions) > 0:
+                for version in versions:
+                    download_tasks.append(
+                        asyncio.create_task(
+                            _download_task(
+                                semaphore=semaphore,
+                                client=client,
+                                target_dir=target_dir,
+                                temp_dir=temp_dir,
+                                extension=extension,
+                                version=version,
+                                download_options=ext_spec_dict[ext_name].download_options,
+                            )
                         )
                     )
-                )
             else:
-                print(f"Warning: No matched version found for {extension.unified_name}")
+                print(f"Downloader warning: No matched version found for {extension.unified_name}")
         if len(download_tasks) > 0:
             await tqdm.gather(*download_tasks, desc="Downloading")
 

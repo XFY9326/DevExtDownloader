@@ -35,9 +35,9 @@ async def _load_plugin_render_params(
                 }
                 break
             else:
-                print(f"Warning: file {file_path} not found.")
+                print(f"XML generator warning: file {file_path} not found.")
         if latest_version is None:
-            print(f"Warning: plugin {plugin_meta_data.id} has no available version.")
+            print(f"XML generator warning: plugin {plugin_meta_data.id} has no available version.")
         else:
             results.append(
                 {

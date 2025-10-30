@@ -1,10 +1,26 @@
 import dataclasses
 import datetime
+import enum
 
 import semantic_version
 from dataclasses_json import DataClassJsonMixin, config
 
 from dev_ext_downloader.common.models import DownloadOptions
+
+
+class TargetPlatformType(enum.StrEnum):
+    UNIVERSAL = "universal"
+    WIN32_IA32 = "win32-ia32"
+    WIN32_X64 = "win32-x64"
+    WIN32_ARM64 = "win32-arm64"
+    LINUX_X64 = "linux-x64"
+    LINUX_ARM64 = "linux-arm64"
+    LINUX_ARMHF = "linux-armhf"
+    ALPINE_X64 = "alpine-x64"
+    ALPINE_ARM64 = "alpine-arm64"
+    DARWIN_X64 = "darwin-x64"
+    DARWIN_ARM64 = "darwin-arm64"
+    WEB = "web"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -22,7 +38,12 @@ class VSCodeExtensionProperty(DataClassJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class VSCodeExtensionVersion(DataClassJsonMixin):
     version: str
-    target_platform: str | None
+    target_platform: TargetPlatformType | None = dataclasses.field(
+        metadata=config(
+            encoder=lambda s: str(s) if s else TargetPlatformType.UNIVERSAL,
+            decoder=lambda s: TargetPlatformType(s) if s else TargetPlatformType.UNIVERSAL,
+        )
+    )
     last_updated: datetime.datetime = dataclasses.field(
         metadata=config(
             encoder=lambda dt: dt.isoformat(),
@@ -58,7 +79,8 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
     def sort_key(self) -> tuple:
         v = semantic_version.Version(version_string=self.version)
         v.prerelease = (self.prerelease,)
-        v.build = str(self.last_updated.timestamp() * 1000)
+        v.build = str(self.target_platform)
+        v.patch = str(self.last_updated.timestamp() * 1000)
         return v.precedence_key
 
 
@@ -81,7 +103,8 @@ class VSCodeExtension(DataClassJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class VSCodeExtFilterOptions(DataClassJsonMixin):
-    target_platform: str | None = None
+    target_platform: tuple[TargetPlatformType, ...] | None = None
+    target_platform_fallback: TargetPlatformType | None = None
     vscode_version: str | None = None
     include_prerelease: bool = False
 

@@ -3,11 +3,11 @@ import shutil
 from pathlib import Path
 
 from dev_ext_downloader.common.models import DownloadOptions
-from dev_ext_downloader.vscode import VSCodeExt, VSCodeExtFilterOptions
+from dev_ext_downloader.vscode import VSCodeExt, VSCodeExtFilterOptions, TargetPlatformType
 from dev_ext_downloader.vscode import download_latest_extensions, generate_index_html
 
 # Download dir
-DOWNLOAD_DIR: Path = Path("./downloads/vscode")
+DOWNLOAD_DIR: Path = Path("./downloads/VSCode")
 
 # Download temp dir
 TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"
@@ -43,8 +43,13 @@ NO_METADATA: bool = False
 FLATTEN_DIR: bool = False
 
 # Target platform or None
-# Currently available platforms are: win32-x64, win32-arm64, linux-x64, linux-arm64, linux-armhf, alpine-x64, alpine-arm64, darwin-x64, darwin-arm64 and web
-TARGET_PLATFORM: str | None = "win32-x64"
+TARGET_PLATFORM: tuple[TargetPlatformType, ...] | None = (
+    TargetPlatformType.WIN32_X64,
+    TargetPlatformType.LINUX_X64
+)
+
+# Target platform fallback or None
+TARGET_PLATFORM_FALLBACK: TargetPlatformType | None = TargetPlatformType.UNIVERSAL
 
 # Required VSCode version or None
 # It will download the latest version if not set
@@ -57,10 +62,17 @@ INCLUDE_PRERELEASE: bool = True
 # VSIX packages id list
 # Example: https://marketplace.visualstudio.com/items?itemName=ms-python.python
 # [ext_id] is ms-python.python
-VSIX_LIST: list[str | VSCodeExt] = [
+VSIX_LIST: set[str | VSCodeExt] = {
     "ms-python.python",
-    "ms-python.vscode-pylance",
-]
+    "ms-python.debugpy"
+}
+
+# For local test
+# noinspection PyBroadException
+try:
+    from local_config.vscode import *
+except:
+    pass
 
 
 async def main() -> None:
@@ -78,6 +90,7 @@ async def main() -> None:
         ),
         default_filter_options=VSCodeExtFilterOptions(
             target_platform=TARGET_PLATFORM,
+            target_platform_fallback=TARGET_PLATFORM_FALLBACK,
             vscode_version=VSCODE_VERSION,
             include_prerelease=INCLUDE_PRERELEASE,
         ),

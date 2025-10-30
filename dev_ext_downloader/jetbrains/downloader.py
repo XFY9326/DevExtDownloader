@@ -72,7 +72,7 @@ async def _run_download_task(
                     exists_versions = JetbrainsDownloadPlugin.from_json(await f.read()).versions
                     version_list = _merge_versions(version, exists_versions)
                 except Exception as e:
-                    print(f"Warning: Can't load old meta data from {plugin.id}.", e)
+                    print(f"Downloader warning: Can't load old meta data from {plugin.id}.", e)
                     exists_versions = None
                     version_list = [version]
                 if exists_versions and download_options.keep_only_latest:

@@ -51,10 +51,11 @@ Set VSIX packages (Modify `vsix.py`):
 
 ```python
 from pathlib import Path
-from dev_ext_downloader.vscode import VSCodeExt
+
+from dev_ext_downloader.vscode import TargetPlatformType, VSCodeExt
 
 # Download dir
-DOWNLOAD_DIR: Path = Path("./vsix-vsix")
+DOWNLOAD_DIR: Path = Path("./downloads/VSCode")
 
 # Download temp dir
 TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"
@@ -64,11 +65,11 @@ TASK_SPEC_PATH: Path = DOWNLOAD_DIR / "task-spec.json"
 
 # Skip if exists or not
 # If exists, skip download
-SKIP_IF_EXISTS: bool = False
+SKIP_IF_EXISTS: bool = True
 
 # Only keep latest version
 # Depends on metadata
-KEEP_ONLY_LATEST: bool = False
+KEEP_ONLY_LATEST: bool = True
 
 # Download concurrency
 DOWNLOAD_CONCURRENCY: int = 8
@@ -91,7 +92,14 @@ FLATTEN_DIR: bool = False
 
 # Target platform or None
 # Currently available platforms are: win32-x64, win32-arm64, linux-x64, linux-arm64, linux-armhf, alpine-x64, alpine-arm64, darwin-x64, darwin-arm64 and web
-TARGET_PLATFORM: str | None = "win32-x64"
+TARGET_PLATFORM: tuple[TargetPlatformType, ...] | None = (
+    TargetPlatformType.UNIVERSAL,
+    TargetPlatformType.WIN32_X64,
+    TargetPlatformType.LINUX_X64
+)
+
+# Target platform fallback or None
+TARGET_PLATFORM_FALLBACK: TargetPlatformType | None = TargetPlatformType.UNIVERSAL
 
 # Required VSCode version or None
 # It will download the latest version if not set
@@ -99,7 +107,7 @@ VSCODE_VERSION: str | None = "1.92.0"
 
 # Include prerelease or not
 # If not set, it will download the latest prerelease version
-INCLUDE_PRERELEASE: bool = False
+INCLUDE_PRERELEASE: bool = True
 
 # VSIX packages ext id list
 # Example: https://marketplace.visualstudio.com/items?itemName=ms-python.python
@@ -133,7 +141,7 @@ from pathlib import Path
 from dev_ext_downloader.jetbrains import JetbrainsDef
 
 # Download dir
-DOWNLOAD_DIR: Path = Path("./downloads/jetbrains")
+DOWNLOAD_DIR: Path = Path("./downloads/Jetbrains")
 
 # Download temp dir
 TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"

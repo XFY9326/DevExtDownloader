@@ -17,7 +17,7 @@ async def iter_meta_data(
             try:
                 yield JetbrainsDownloadPlugin.from_json(await f.read())
             except Exception as e:
-                print(f"Warning: meta file {meta_path} could not be read.", e)
+                print(f"Metadata read warning: meta file {meta_path} could not be read.", e)
 
 
 def get_download_file_name(plugin: JetbrainsPlugin, extension: str) -> str:

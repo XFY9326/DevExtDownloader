@@ -3,7 +3,8 @@ from typing import Collection
 import httpx
 
 from dev_ext_downloader.common import iso8601
-from .data import VSCodeExtension, VSCodeExtensionVersion, VSCodeExtensionFile, VSCodeExtensionProperty
+from .data import VSCodeExtension, VSCodeExtensionVersion, VSCodeExtensionFile, VSCodeExtensionProperty, \
+    TargetPlatformType
 
 
 class VSCodeExtensionAPI:
@@ -57,7 +58,9 @@ class VSCodeExtensionAPI:
             versions=tuple(
                 VSCodeExtensionVersion(
                     version=version["version"],
-                    target_platform=version["targetPlatform"] if "targetPlatform" in version else None,
+                    target_platform=TargetPlatformType(
+                        version["targetPlatform"]
+                    ) if "targetPlatform" in version else TargetPlatformType.UNIVERSAL,
                     last_updated=iso8601.parse_iso8601(version["lastUpdated"]),
                     files=tuple(
                         VSCodeExtensionFile(

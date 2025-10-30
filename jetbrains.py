@@ -10,7 +10,7 @@ from dev_ext_downloader.jetbrains import (
 )
 
 # Download dir
-DOWNLOAD_DIR: Path = Path("./downloads/jetbrains")
+DOWNLOAD_DIR: Path = Path("./downloads/Jetbrains")
 
 # Download temp dir
 TEMP_DIR: Path = DOWNLOAD_DIR / ".temp"
@@ -53,12 +53,18 @@ TARGET_BUILD_VERSION: str | None = "IC-243.22562.13"
 # Example: https://plugins.jetbrains.com/plugin/7495--ignore
 # [ext_id] is '7495'
 PLUGINS_LIST: list[str | JetbrainsDef] = [
-    "24468",  # https://plugins.jetbrains.com/plugin/24468-classic-ui
     "7495",  # https://plugins.jetbrains.com/plugin/7495--ignore
 ]
 
 # For generating updatePlugins.xml
 PLUGINS_DOWNLOAD_BASE_URL: str | None = "http://localhost:8080"
+
+# For local test
+# noinspection PyBroadException
+try:
+    from local_config.jetbrains import *
+except:
+    pass
 
 
 async def main() -> None:

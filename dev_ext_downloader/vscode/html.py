@@ -6,6 +6,7 @@ import aioshutil
 from jinja2 import Template
 
 from dev_ext_downloader.common.tools import iter_meta_data_json
+from . import TargetPlatformType
 from .data import VSCodeExtension
 from .utils import get_download_file_name, get_download_file_dir
 
@@ -21,7 +22,7 @@ async def _iter_meta_data(
             try:
                 yield VSCodeExtension.from_json(await f.read())
             except Exception as e:
-                print(f"Warning: meta file {meta_path} could not be read.", e)
+                print(f"HTML generator warning: meta file {meta_path} could not be read.", e)
 
 
 async def _load_extensions_render_params(
@@ -39,7 +40,7 @@ async def _load_extensions_render_params(
                     {
                         "version": ext_version.version,
                         "prelease": ext_version.prerelease,
-                        "target_platform": ext_version.target_platform or "universal",
+                        "target_platform": ext_version.target_platform or TargetPlatformType.UNIVERSAL,
                         "last_updated": ext_version.last_updated.strftime(
                             "%Y-%m-%d %H:%M:%S"
                         ),
@@ -48,7 +49,7 @@ async def _load_extensions_render_params(
                     }
                 )
             else:
-                print(f"Warning: file {file_path} not found.")
+                print(f"HTML generator warning: file {file_path} not found.")
         results.append(
             {
                 "extension_id": ext_meta_data.unified_name,

@@ -35,7 +35,7 @@ async def load_plugin_render_params(
                     }
                 )
             else:
-                print(f"Warning: file {file_path} not found.")
+                print(f"HTML generator warning: file {file_path} not found.")
         results.append(
             {
                 "id": plugin_meta_data.id,
