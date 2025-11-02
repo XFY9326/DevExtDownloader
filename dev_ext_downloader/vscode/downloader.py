@@ -65,14 +65,20 @@ async def _run_download_task(
                 if not has_old_meta_data:
                     version_list = [version]
                 else:
+                    exists_extension: VSCodeExtension | None = None
+
                     try:
                         f.seek(0)
-                        exists_extension = VSCodeExtension.from_json(await f.read())
-                        version_list = _merge_versions(version, exists_extension.versions)
+                        old_meta_data_content = await f.read()
+                        if old_meta_data_content:
+                            exists_extension = VSCodeExtension.from_json(old_meta_data_content)
+                            version_list = _merge_versions(version, exists_extension.versions)
                     except Exception as e:
                         print(f"Downloader warning: Can't load old meta data for {extension.unified_name}.", e)
-                        exists_extension = None
+
+                    if exists_extension is None:
                         version_list = [version]
+
                     if exists_extension and download_options.keep_only_latest:
                         outdated_versions: list[VSCodeExtensionVersion] = sorted([
                             v
