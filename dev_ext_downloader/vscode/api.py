@@ -1,10 +1,16 @@
-from typing import Collection
+from collections.abc import Collection
 
 import httpx
 
 from dev_ext_downloader.common import iso8601
-from .data import VSCodeExtension, VSCodeExtensionVersion, VSCodeExtensionFile, VSCodeExtensionProperty, \
-    TargetPlatformType
+
+from .data import (
+    TargetPlatformType,
+    VSCodeExtension,
+    VSCodeExtensionFile,
+    VSCodeExtensionProperty,
+    VSCodeExtensionVersion,
+)
 
 
 class VSCodeExtensionAPI:
@@ -21,26 +27,21 @@ class VSCodeExtensionAPI:
             "assetTypes": ["Microsoft.VisualStudio.Services.VSIXPackage"],
             "filters": [
                 {
-                    "criteria": [
-                        {
-                            "filterType": 7,
-                            "value": name
-                        } for name in ext_name
-                    ],
+                    "criteria": [{"filterType": 7, "value": name} for name in ext_name],
                     "pageSize": len(ext_name),
                     "pageNumber": 1,
                     "sortBy": 0,
-                    "sortOrder": 0
+                    "sortOrder": 0,
                 }
             ],
-            "flags": 439
+            "flags": 439,
         }
 
     @staticmethod
     def _build_headers(api_version: str = "3.0-preview.1") -> dict:
         headers = {
             "Accept": f"application/json;api-version={api_version}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
         return headers
 
@@ -58,9 +59,9 @@ class VSCodeExtensionAPI:
             versions=tuple(
                 VSCodeExtensionVersion(
                     version=version["version"],
-                    target_platform=TargetPlatformType(
-                        version["targetPlatform"]
-                    ) if "targetPlatform" in version else TargetPlatformType.UNIVERSAL,
+                    target_platform=TargetPlatformType(version["targetPlatform"])
+                    if "targetPlatform" in version
+                    else TargetPlatformType.UNIVERSAL,
                     last_updated=iso8601.parse_iso8601(version["lastUpdated"]),
                     files=tuple(
                         VSCodeExtensionFile(
@@ -75,18 +76,22 @@ class VSCodeExtensionAPI:
                             value=prop["value"],
                         )
                         for prop in version["properties"]
-                    ) if "properties" in version else tuple(),
+                    )
+                    if "properties" in version
+                    else tuple(),
                 )
                 for version in extension["versions"]
             ),
         )
 
-    async def get_extensions(self, ext_names: Collection[str]) -> dict[str, VSCodeExtension]:
+    async def get_extensions(
+        self, ext_names: Collection[str]
+    ) -> dict[str, VSCodeExtension]:
         ext_names = set(ext_names)
         response = await self._client.post(
             self._EXTENSION_QUERY_URL,
             json=self._build_query(ext_names),
-            headers=self._build_headers()
+            headers=self._build_headers(),
         )
         response.raise_for_status()
         data = response.json()

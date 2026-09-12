@@ -266,8 +266,8 @@
             li.className = 'version-item';
             const infoDiv = document.createElement('div');
             infoDiv.className = 'version-info';
-            infoDiv.innerHTML = `<strong>${ver.version}</strong>${ver.prerelease ? `<span style="color:#d9534f;font-size:0.85em;margin-left:4px;">(预发布)</span>` : ''}<br>` +
-                `平台：${ver.target_platform}<br>引擎：${ver.code_engine}<br>更新时间：${ver.last_updated}`;
+            infoDiv.textContent = `${ver.version}${ver.prerelease ? ' (预发布)' : ''}\n` +
+                `平台：${ver.target_platform}\n引擎：${ver.code_engine}\n更新时间：${ver.last_updated}`;
             const link = document.createElement('a');
             link.className = 'download-link';
             link.href = ver.file_url;

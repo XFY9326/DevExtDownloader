@@ -398,7 +398,7 @@
 
         const desc = document.createElement('div');
         desc.className = 'description';
-        desc.innerHTML = item.description;
+        desc.textContent = item.description;
         details.appendChild(desc);
 
         const ul = document.createElement('ul');
@@ -408,11 +408,9 @@
             li.className = 'version-item';
             const infoDiv = document.createElement('div');
             infoDiv.className = 'version-info';
-            infoDiv.innerHTML = `
-                <strong>${ver.version}</strong> ${ver.size ? `(${ver.size})` : ''}<br>
-                更新时间：${ver.updated_date || '-'}<br>
-                兼容：${ver.since_build || '-'} - ${ver.until_build || '-'}
-            `;
+            infoDiv.textContent = `${ver.version} ${ver.size ? `(${ver.size})` : ''}\n` +
+                `更新时间：${ver.updated_date || '-'}\n` +
+                `兼容：${ver.since_build || '-'} - ${ver.until_build || '-'}`;
             const link = document.createElement('a');
             link.className = 'download-link';
             link.href = ver.file_url;

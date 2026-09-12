@@ -1,21 +1,32 @@
 import hashlib
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Generator, Mapping
 from pathlib import Path
-from typing import Any, Generator, Mapping
-from urllib.parse import urljoin, urlparse, urlunparse, quote, urlencode
+from typing import Any
+from urllib.parse import quote, urlencode, urljoin, urlparse, urlunparse
 
 import aiofile
 import aioshutil
 import httpx
-from tenacity import retry, stop_after_attempt, wait_incrementing, retry_if_exception_type
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_incrementing,
+)
 
 
 def get_file_name_from_header(headers: httpx.Headers) -> str | None:
     content_disposition = headers.get("Content-Disposition")
     if content_disposition:
-        match = re.search(r'filename="(.+)"', content_disposition)
+        match = re.search(
+            r'filename\s*=\s*"([^"]+)"', content_disposition, re.IGNORECASE
+        )
+        if match is None:
+            match = re.search(
+                r"filename\s*=\s*([^;\s]+)", content_disposition, re.IGNORECASE
+            )
         if match:
             return match.group(1)
     return None
@@ -28,7 +39,7 @@ def get_file_name_from_response(response: httpx.Response) -> str | None:
         if url_path.endswith("/"):
             return None
         else:
-            result: str = os.path.basename(url_path)
+            result = os.path.basename(url_path)
     return result.strip()
 
 
@@ -36,15 +47,15 @@ def get_file_name_from_response(response: httpx.Response) -> str | None:
     stop=stop_after_attempt(5),
     wait=wait_incrementing(start=0, increment=2, max=30),
     retry=retry_if_exception_type(httpx.HTTPError),
-    reraise=True
+    reraise=True,
 )
 async def download_file(
-        client: httpx.AsyncClient,
-        url: str | httpx.URL,
-        target_dir: Path,
-        file_name: str | Callable[[str | None], str | None] | None = None,
-        temp_dir: Path | None = None,
-        skip_if_exists: bool = False,
+    client: httpx.AsyncClient,
+    url: str | httpx.URL,
+    target_dir: Path,
+    file_name: str | Callable[[str | None], str | None] | None = None,
+    temp_dir: Path | None = None,
+    skip_if_exists: bool = False,
 ) -> Path:
     temp_dir = target_dir if temp_dir is None else temp_dir
     temp_dir.mkdir(parents=True, exist_ok=True)
@@ -53,7 +64,7 @@ async def download_file(
     target_tmp_path = temp_dir / hashlib.sha1(str(url).encode("utf-8")).hexdigest()
 
     if file_name and isinstance(file_name, str):
-        target_final_path = target_dir / file_name.strip()
+        target_final_path = target_dir / _safe_file_name(file_name)
         if skip_if_exists and target_final_path.is_file():
             return target_final_path
 
@@ -70,10 +81,9 @@ async def download_file(
         if not file_name:
             raise ValueError(f"Unknown download file name: {url}")
 
-        target_final_path = target_dir / file_name
+        target_final_path = target_dir / _safe_file_name(file_name)
         if skip_if_exists and target_final_path.is_file():
             return target_final_path
-
         async with aiofile.async_open(target_tmp_path, mode="wb") as f:
             async for chunk in response.aiter_bytes():
                 await f.write(chunk)
@@ -81,6 +91,15 @@ async def download_file(
 
         await aioshutil.move(target_tmp_path, target_final_path)
         return target_final_path
+
+
+def _safe_file_name(file_name: str) -> str:
+    """Reject paths so HTTP metadata cannot escape the requested directory."""
+    name = file_name.strip()
+    path = Path(name)
+    if not name or path.name != name or name in {".", ".."}:
+        raise ValueError(f"Invalid download file name: {file_name!r}")
+    return name
 
 
 def clean_dir(target_dir: Path, keep: set[Path]) -> None:
@@ -95,7 +114,7 @@ def clean_dir(target_dir: Path, keep: set[Path]) -> None:
 
 
 def iter_meta_data_json(
-        download_dir: Path, is_flatten: bool
+    download_dir: Path, is_flatten: bool
 ) -> Generator[Path, Any, None]:
     for p in download_dir.iterdir():
         if is_flatten:
@@ -108,24 +127,24 @@ def iter_meta_data_json(
 
 def pretty_bytes(num_bytes: int, precision: int = 2) -> str:
     if num_bytes < 0:
-        raise ValueError("Num of bytes can't be negative: {}".format(num_bytes))
+        raise ValueError(f"Num of bytes can't be negative: {num_bytes}")
 
     units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
     index = 0
-    while num_bytes >= 1024 and index < len(units) - 1:
-        num_bytes /= 1024.0
+    result_bytes = float(num_bytes)
+    while result_bytes >= 1024 and index < len(units) - 1:
+        result_bytes /= 1024.0
         index += 1
-    return f"{num_bytes:.{precision}f} {units[index]}"
+    return f"{result_bytes:.{precision}f} {units[index]}"
 
 
 def get_file_name_last_extension(filename: str) -> str:
-    return "".join(Path(filename).suffixes[-1])
+    suffixes = Path(filename).suffixes
+    return suffixes[-1] if suffixes else ""
 
 
 def build_url(
-        base: str,
-        path: str = "",
-        params: Mapping[str, Any] | None = None
+    base: str, path: str = "", params: Mapping[str, Any] | None = None
 ) -> str:
     safe_path = quote(path, safe="/")
 
@@ -144,5 +163,5 @@ def is_valid_http_url(url: str) -> bool:
     try:
         result = urlparse(url)
         return all([result.scheme in ("http", "https"), result.netloc])
-    except:
+    except (ValueError, TypeError):
         return False

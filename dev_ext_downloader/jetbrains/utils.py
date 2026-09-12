@@ -1,23 +1,28 @@
 import hashlib
 import re
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import AsyncGenerator, Any
+from typing import Any
 
 import aiofile
 
 from dev_ext_downloader.common.tools import iter_meta_data_json
+
 from .data import JetbrainsDownloadPlugin, JetbrainsDownloadVersion, JetbrainsPlugin
 
 
 async def iter_meta_data(
-        download_dir: Path, is_flatten: bool
+    download_dir: Path, is_flatten: bool
 ) -> AsyncGenerator[JetbrainsDownloadPlugin, Any]:
     for meta_path in iter_meta_data_json(download_dir, is_flatten):
         async with aiofile.async_open(meta_path, "r", encoding="utf-8") as f:
             try:
                 yield JetbrainsDownloadPlugin.from_json(await f.read())
             except Exception as e:
-                print(f"Metadata read warning: meta file {meta_path} could not be read.", e)
+                print(
+                    f"Metadata read warning: meta file {meta_path} could not be read.",
+                    e,
+                )
 
 
 def get_download_file_name(plugin: JetbrainsPlugin, extension: str) -> str:
@@ -28,11 +33,7 @@ def get_download_file_name(plugin: JetbrainsPlugin, extension: str) -> str:
     return f"{prefix}_{suffix}{extension}"
 
 
-def get_download_file_dir(
-        download_dir: Path,
-        is_flatten: bool,
-        plugin_id: str
-) -> Path:
+def get_download_file_dir(download_dir: Path, is_flatten: bool, plugin_id: str) -> Path:
     if is_flatten:
         return download_dir
     else:
@@ -40,9 +41,12 @@ def get_download_file_dir(
 
 
 def get_download_file_path(
-        download_dir: Path,
-        is_flatten: bool,
-        plugin_meta_data: JetbrainsDownloadPlugin,
-        plugin_version: JetbrainsDownloadVersion
+    download_dir: Path,
+    is_flatten: bool,
+    plugin_meta_data: JetbrainsDownloadPlugin,
+    plugin_version: JetbrainsDownloadVersion,
 ) -> Path:
-    return get_download_file_dir(download_dir, is_flatten, plugin_meta_data.id) / plugin_version.download_file_name
+    return (
+        get_download_file_dir(download_dir, is_flatten, plugin_meta_data.id)
+        / plugin_version.download_file_name
+    )

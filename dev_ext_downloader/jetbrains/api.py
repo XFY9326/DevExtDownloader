@@ -46,9 +46,15 @@ class JetbrainsPluginAPI:
                         size=int(plugin_size) if plugin_size else None,
                         updated_date=datetime.datetime.fromtimestamp(
                             int(plugin_update_date) / 1000.0
-                        ) if plugin_update_date else None,
-                        since_build=idea_version_el.get("since-build") if idea_version_el is not None else None,
-                        until_build=idea_version_el.get("until-build") if idea_version_el is not None else None,
+                        )
+                        if plugin_update_date
+                        else None,
+                        since_build=idea_version_el.get("since-build")
+                        if idea_version_el is not None
+                        else None,
+                        until_build=idea_version_el.get("until-build")
+                        if idea_version_el is not None
+                        else None,
                         download_url=self._get_plugin_download_url(
                             plugin_id, plugin_version
                         ),
@@ -58,14 +64,16 @@ class JetbrainsPluginAPI:
                             if d.text
                         ),
                     ),
-                    tags=tuple(t.text.strip() for t in plugin_el.findall("tags") if t.text),
+                    tags=tuple(
+                        t.text.strip() for t in plugin_el.findall("tags") if t.text
+                    ),
                 )
                 plugins.append(plugin)
 
         return plugins
 
     async def list_plugins(
-            self, plugin_id: str, build: str | None = None
+        self, plugin_id: str, build: str | None = None
     ) -> list[JetbrainsPlugin]:
         params = {"pluginId": plugin_id}
         if build:

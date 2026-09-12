@@ -1,4 +1,5 @@
 import asyncio
+from types import TracebackType
 
 
 class TokenLockEntry:
@@ -12,16 +13,21 @@ class TokenLockEntry:
 
 
 class TokenLockContext:
-    def __init__(self, lock: 'TokenLock', token: str, timeout: float | None) -> None:
+    def __init__(self, lock: "TokenLock", token: str, timeout: float | None) -> None:
         self._lock = lock
         self._token = token
         self._timeout = timeout
 
-    async def __aenter__(self) -> 'TokenLockContext':
+    async def __aenter__(self) -> "TokenLockContext":
         await self._lock.acquire(self._token, self._timeout)
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> bool:
         await self._lock.release(self._token)
         return False
 
@@ -40,7 +46,9 @@ class TokenLock:
     async def release(self, token: str) -> None:
         await self._release_internal(token)
 
-    async def _acquire_internal(self, token: str, timeout: float | None) -> TokenLockEntry:
+    async def _acquire_internal(
+        self, token: str, timeout: float | None
+    ) -> TokenLockEntry:
         async with self._mgr_lock:
             entry = self._locks.get(token)
             if entry is None:
@@ -73,7 +81,12 @@ class TokenLock:
         finally:
             async with self._mgr_lock:
                 entry.waiters -= 1
-                if not got_it and entry.waiters == 0 and entry.owner is None and not entry.lock.locked():
+                if (
+                    not got_it
+                    and entry.waiters == 0
+                    and entry.owner is None
+                    and not entry.lock.locked()
+                ):
                     existing = self._locks.get(token)
                     if existing is entry:
                         del self._locks[token]

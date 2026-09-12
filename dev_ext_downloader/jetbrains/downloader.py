@@ -1,47 +1,66 @@
 import asyncio
+from collections.abc import Collection
 from pathlib import Path
-from typing import Collection
 
 import aiofile
 import httpx
-from tenacity import retry, stop_after_attempt, wait_incrementing, retry_if_exception_type
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_incrementing,
+)
 from tqdm.asyncio import tqdm
 
 from dev_ext_downloader.common.models import DownloadOptions
 from dev_ext_downloader.common.tools import download_file, get_file_name_last_extension
+
 from .api import JetbrainsPluginAPI
 from .data import (
     JetbrainsDef,
-    JetbrainsPlugin,
     JetbrainsDownloadPlugin,
     JetbrainsDownloadVersion,
+    JetbrainsPlugin,
 )
-from .utils import get_download_file_name, get_download_file_dir
+from .utils import get_download_file_dir, get_download_file_name
 
 
 def _merge_versions(
-        new_version: JetbrainsDownloadVersion,
-        old_versions: tuple[JetbrainsDownloadVersion, ...]
+    new_version: JetbrainsDownloadVersion,
+    old_versions: tuple[JetbrainsDownloadVersion, ...],
 ) -> list[JetbrainsDownloadVersion]:
-    old_versions = [i for i in old_versions if i.version != new_version.version]
-    return [new_version] + old_versions
+    old_versions_list = [i for i in old_versions if i.version != new_version.version]
+    return [new_version] + old_versions_list
 
 
 async def _run_download_task(
-        client: httpx.AsyncClient,
-        target_dir: Path,
-        temp_dir: Path,
-        plugin: JetbrainsPlugin,
-        download_options: DownloadOptions,
+    client: httpx.AsyncClient,
+    target_dir: Path,
+    temp_dir: Path,
+    plugin: JetbrainsPlugin,
+    download_options: DownloadOptions,
 ) -> None:
-    plugin_dir = get_download_file_dir(target_dir, download_options.flatten_dir, plugin.id)
+    plugin_dir = get_download_file_dir(
+        target_dir, download_options.flatten_dir, plugin.id
+    )
     plugin_dir.mkdir(parents=True, exist_ok=True)
+
+    if plugin.version.download_url is None:
+        raise ValueError(f"Plugin {plugin.id} has no download URL")
+
+    def build_file_name(source_name: str | None) -> str:
+        if source_name is None:
+            raise ValueError(f"Plugin {plugin.id} response has no file name")
+        extension = get_file_name_last_extension(source_name)
+        if not extension:
+            raise ValueError(f"Plugin {plugin.id} response has no file extension")
+        return get_download_file_name(plugin, extension)
 
     download_file_path = await download_file(
         client=client,
         url=plugin.version.download_url,
         target_dir=plugin_dir,
-        file_name=lambda n: get_download_file_name(plugin, get_file_name_last_extension(n)),
+        file_name=build_file_name,
         temp_dir=temp_dir,
         skip_if_exists=download_options.skip_if_exists,
     )
@@ -52,7 +71,7 @@ async def _run_download_task(
             meta_data_path.unlink(missing_ok=True)
     else:
         has_old_meta_data = meta_data_path.is_file()
-        async with (aiofile.async_open(meta_data_path, "a+", encoding="utf-8") as f):
+        async with aiofile.async_open(meta_data_path, "a+", encoding="utf-8") as f:
             version = JetbrainsDownloadVersion(
                 version=plugin.version.version,
                 change_notes=plugin.version.change_notes,
@@ -69,10 +88,15 @@ async def _run_download_task(
             else:
                 try:
                     f.seek(0)
-                    exists_versions = JetbrainsDownloadPlugin.from_json(await f.read()).versions
+                    exists_versions = JetbrainsDownloadPlugin.from_json(
+                        await f.read()
+                    ).versions
                     version_list = _merge_versions(version, exists_versions)
                 except Exception as e:
-                    print(f"Downloader warning: Can't load old meta data from {plugin.id}.", e)
+                    print(
+                        f"Downloader warning: Can't load old meta data from {plugin.id}.",
+                        e,
+                    )
                     exists_versions = None
                     version_list = [version]
                 if exists_versions and download_options.keep_only_latest:
@@ -81,7 +105,12 @@ async def _run_download_task(
                         if old_file_path != download_file_path:
                             old_file_path.unlink(missing_ok=True)
                     version_list = [version]
-            version_list.sort(key=lambda i: i.updated_date, reverse=True)
+            version_list.sort(
+                key=lambda i: i.updated_date.timestamp()
+                if i.updated_date is not None
+                else float("-inf"),
+                reverse=True,
+            )
             download_meta = JetbrainsDownloadPlugin(
                 id=plugin.id,
                 name=plugin.name,
@@ -98,12 +127,12 @@ async def _run_download_task(
 
 
 async def _download_task(
-        semaphore: asyncio.Semaphore,
-        client: httpx.AsyncClient,
-        target_dir: Path,
-        temp_dir: Path,
-        plugin: JetbrainsPlugin,
-        download_options: DownloadOptions,
+    semaphore: asyncio.Semaphore,
+    client: httpx.AsyncClient,
+    target_dir: Path,
+    temp_dir: Path,
+    plugin: JetbrainsPlugin,
+    download_options: DownloadOptions,
 ) -> None:
     async with semaphore:
         await _run_download_task(client, target_dir, temp_dir, plugin, download_options)
@@ -113,10 +142,10 @@ async def _download_task(
     stop=stop_after_attempt(5),
     wait=wait_incrementing(start=0, increment=2, max=30),
     retry=retry_if_exception_type(httpx.HTTPError),
-    reraise=True
+    reraise=True,
 )
 async def _load_data_task(
-        semaphore: asyncio.Semaphore, api: JetbrainsPluginAPI, plugin_def: JetbrainsDef
+    semaphore: asyncio.Semaphore, api: JetbrainsPluginAPI, plugin_def: JetbrainsDef
 ) -> tuple[str, JetbrainsPlugin] | None:
     async with semaphore:
         plugins = await api.list_plugins(
@@ -131,16 +160,20 @@ async def _load_data_task(
 
 
 async def download_latest_extensions(
-        plugins_def: Collection[str | JetbrainsDef],
-        target_dir: Path = Path("./downloads/jetbrains/"),
-        temp_dir: Path | None = None,
-        concurrency: int = 4,
-        task_spec_path: Path | None = None,
-        default_target_build_version: str | None = None,
-        default_download_options: DownloadOptions = DownloadOptions(),
+    plugins_def: Collection[str | JetbrainsDef],
+    target_dir: Path = Path("./downloads/jetbrains/"),
+    temp_dir: Path | None = None,
+    concurrency: int = 4,
+    task_spec_path: Path | None = None,
+    default_target_build_version: str | None = None,
+    default_download_options: DownloadOptions | None = None,
 ) -> None:
     if len(plugins_def) == 0:
         return
+    if concurrency < 1:
+        raise ValueError("concurrency must be greater than zero")
+    if default_download_options is None:
+        default_download_options = DownloadOptions()
 
     plugins_spec_dict: dict[str, JetbrainsDef] = {}
     for d in plugins_def:
@@ -148,7 +181,7 @@ async def download_latest_extensions(
             JetbrainsDef(
                 plugin_id=d.plugin_id,
                 target_build_version=d.target_build_version
-                                     or default_target_build_version,
+                or default_target_build_version,
                 download_options=d.download_options or default_download_options,
             )
             if isinstance(d, JetbrainsDef)
@@ -188,7 +221,8 @@ async def download_latest_extensions(
                     target_dir=target_dir,
                     temp_dir=temp_dir,
                     plugin=v,
-                    download_options=plugins_spec_dict[k].download_options,
+                    download_options=plugins_spec_dict[k].download_options
+                    or default_download_options,
                 )
             )
             for k, v in loaded_data.items()

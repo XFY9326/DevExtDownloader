@@ -41,7 +41,9 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
     target_platform: TargetPlatformType | None = dataclasses.field(
         metadata=config(
             encoder=lambda s: str(s) if s else TargetPlatformType.UNIVERSAL,
-            decoder=lambda s: TargetPlatformType(s) if s else TargetPlatformType.UNIVERSAL,
+            decoder=lambda s: TargetPlatformType(s)
+            if s
+            else TargetPlatformType.UNIVERSAL,
         )
     )
     last_updated: datetime.datetime = dataclasses.field(
@@ -73,15 +75,19 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
 
     @property
     def prerelease(self) -> bool:
-        return bool(self.get_property_value("Microsoft.VisualStudio.Code.PreRelease"))
+        value = self.get_property_value("Microsoft.VisualStudio.Code.PreRelease")
+        return value is not None and value.strip().lower() == "true"
 
     @property
     def sort_key(self) -> tuple:
-        v = semantic_version.Version(version_string=self.version)
-        v.prerelease = (self.prerelease,)
-        v.build = str(self.target_platform)
-        v.patch = str(self.last_updated.timestamp() * 1000)
-        return v.precedence_key
+        """Return a deterministic key without mutating semantic-version internals."""
+        version = semantic_version.Version(self.version)
+        return (
+            version.precedence_key,
+            not self.prerelease,
+            self.last_updated.timestamp(),
+            str(self.target_platform or TargetPlatformType.UNIVERSAL),
+        )
 
 
 @dataclasses.dataclass(frozen=True)

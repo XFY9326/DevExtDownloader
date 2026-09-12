@@ -4,9 +4,10 @@ from pathlib import Path
 
 from dev_ext_downloader.common.models import DownloadOptions
 from dev_ext_downloader.jetbrains import (
+    JetbrainsDef,
     download_latest_extensions,
+    generate_index_html,
     generate_update_plugins_xml,
-    JetbrainsDef, generate_index_html,
 )
 
 # Download dir
@@ -62,8 +63,8 @@ PLUGINS_DOWNLOAD_BASE_URL: str | None = "http://localhost:8080"
 # For local test
 # noinspection PyBroadException
 try:
-    from local_config.jetbrains import *
-except:
+    from local_config.jetbrains import *  # noqa: F403
+except:  # noqa: E722
     pass
 
 

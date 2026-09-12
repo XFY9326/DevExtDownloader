@@ -5,25 +5,30 @@ import aiofile
 from jinja2 import Template
 
 from dev_ext_downloader.common.tools import build_url, is_valid_http_url
-from .utils import iter_meta_data, get_download_file_path
+
+from .utils import get_download_file_path, iter_meta_data
 
 _TEMPLATE_XML_PATH: Path = Path(__file__).parent / "assets" / "updatePlugins.xml.j2"
 
 
 async def _load_plugin_render_params(
-        base_url: str,
-        download_dir: Path,
-        is_flatten: bool = False,
+    base_url: str,
+    download_dir: Path,
+    is_flatten: bool = False,
 ) -> list[dict[str, Any]]:
     results: list = []
     async for plugin_meta_data in iter_meta_data(download_dir, is_flatten):
         latest_version: dict[str, Any] | None = None
         for plugin_version in plugin_meta_data.versions:
-            file_path = get_download_file_path(download_dir, is_flatten, plugin_meta_data, plugin_version)
+            file_path = get_download_file_path(
+                download_dir, is_flatten, plugin_meta_data, plugin_version
+            )
             if file_path.is_file():
                 file_url = build_url(
                     base=base_url if base_url.endswith("/") else f"{base_url}/",
-                    path=str(file_path.relative_to(download_dir).as_posix()).lstrip("/")
+                    path=str(file_path.relative_to(download_dir).as_posix()).lstrip(
+                        "/"
+                    ),
                 )
                 latest_version = {
                     "version": plugin_version.version,
@@ -37,7 +42,9 @@ async def _load_plugin_render_params(
             else:
                 print(f"XML generator warning: file {file_path} not found.")
         if latest_version is None:
-            print(f"XML generator warning: plugin {plugin_meta_data.id} has no available version.")
+            print(
+                f"XML generator warning: plugin {plugin_meta_data.id} has no available version."
+            )
         else:
             results.append(
                 {
@@ -53,7 +60,7 @@ async def _load_plugin_render_params(
 
 
 async def generate_update_plugins_xml(
-        base_url: str, download_dir: Path, is_flatten: bool = False
+    base_url: str, download_dir: Path, is_flatten: bool = False
 ) -> Path:
     if not is_valid_http_url(base_url):
         raise ValueError(f"Invalid http base url: {base_url}")

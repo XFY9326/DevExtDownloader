@@ -1,46 +1,54 @@
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any
 
 import aiofile
 import aioshutil
 from jinja2 import Template
 
 from dev_ext_downloader.common.tools import iter_meta_data_json
+
 from . import TargetPlatformType
 from .data import VSCodeExtension
-from .utils import get_download_file_name, get_download_file_dir
+from .utils import get_download_file_dir, get_download_file_name
 
 _TEMPLATE_INDEX_PATH: Path = Path(__file__).parent / "assets" / "index.html.j2"
 _TEMPLATE_FAVICON_PATH: Path = Path(__file__).parent / "assets" / "favicon.ico"
 
 
 async def _iter_meta_data(
-        download_dir: Path, is_flatten: bool
+    download_dir: Path, is_flatten: bool
 ) -> AsyncGenerator[VSCodeExtension, Any]:
     for meta_path in iter_meta_data_json(download_dir, is_flatten):
         async with aiofile.async_open(meta_path, "r", encoding="utf-8") as f:
             try:
                 yield VSCodeExtension.from_json(await f.read())
             except Exception as e:
-                print(f"HTML generator warning: meta file {meta_path} could not be read.", e)
+                print(
+                    f"HTML generator warning: meta file {meta_path} could not be read.",
+                    e,
+                )
 
 
 async def _load_extensions_render_params(
-        download_dir: Path, is_flatten: bool
+    download_dir: Path, is_flatten: bool
 ) -> list[dict[str, Any]]:
     results: list = []
     async for ext_meta_data in _iter_meta_data(download_dir, is_flatten):
         versions: list[dict[str, Any]] = []
         for ext_version in ext_meta_data.versions:
             download_file_name = get_download_file_name(ext_meta_data, ext_version)
-            download_file_dir = get_download_file_dir(download_dir, is_flatten, ext_meta_data)
+            download_file_dir = get_download_file_dir(
+                download_dir, is_flatten, ext_meta_data
+            )
             file_path = download_file_dir / download_file_name
             if file_path.is_file():
                 versions.append(
                     {
                         "version": ext_version.version,
-                        "prelease": ext_version.prerelease,
-                        "target_platform": ext_version.target_platform or TargetPlatformType.UNIVERSAL,
+                        "prerelease": ext_version.prerelease,
+                        "target_platform": ext_version.target_platform
+                        or TargetPlatformType.UNIVERSAL,
                         "last_updated": ext_version.last_updated.strftime(
                             "%Y-%m-%d %H:%M:%S"
                         ),
@@ -78,6 +86,8 @@ async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> P
     async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:
         await f.write(html_content)
 
-    await aioshutil.copyfile(_TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name))
+    await aioshutil.copyfile(
+        _TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name)
+    )
 
     return index_html_path
