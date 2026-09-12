@@ -4,9 +4,8 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
-import aiofile
-
-from dev_ext_downloader.common.tools import iter_meta_data_json
+from dev_ext_downloader.common.render import iter_json_metadata
+from dev_ext_downloader.common.tools import get_download_dir
 
 from .data import JetbrainsDownloadPlugin, JetbrainsDownloadVersion, JetbrainsPlugin
 
@@ -14,15 +13,10 @@ from .data import JetbrainsDownloadPlugin, JetbrainsDownloadVersion, JetbrainsPl
 async def iter_meta_data(
     download_dir: Path, is_flatten: bool
 ) -> AsyncGenerator[JetbrainsDownloadPlugin, Any]:
-    for meta_path in iter_meta_data_json(download_dir, is_flatten):
-        async with aiofile.async_open(meta_path, "r", encoding="utf-8") as f:
-            try:
-                yield JetbrainsDownloadPlugin.from_json(await f.read())
-            except Exception as e:
-                print(
-                    f"Metadata read warning: meta file {meta_path} could not be read.",
-                    e,
-                )
+    async for metadata in iter_json_metadata(
+        download_dir, is_flatten, JetbrainsDownloadPlugin.from_json
+    ):
+        yield metadata
 
 
 def get_download_file_name(plugin: JetbrainsPlugin, extension: str) -> str:
@@ -34,10 +28,7 @@ def get_download_file_name(plugin: JetbrainsPlugin, extension: str) -> str:
 
 
 def get_download_file_dir(download_dir: Path, is_flatten: bool, plugin_id: str) -> Path:
-    if is_flatten:
-        return download_dir
-    else:
-        return download_dir / plugin_id
+    return get_download_dir(download_dir, is_flatten, plugin_id)
 
 
 def get_download_file_path(

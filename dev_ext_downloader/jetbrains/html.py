@@ -1,10 +1,7 @@
 from pathlib import Path
 from typing import Any
 
-import aiofile
-import aioshutil
-from jinja2 import Template
-
+from dev_ext_downloader.common.render import render_template_to_file
 from dev_ext_downloader.common.tools import build_url, is_valid_http_url, pretty_bytes
 
 from .utils import get_download_file_path, iter_meta_data
@@ -66,26 +63,20 @@ async def generate_index_html(
     if not download_dir.is_dir():
         raise NotADirectoryError(download_dir)
 
-    async with aiofile.async_open(_TEMPLATE_INDEX_PATH, "r", encoding="utf-8") as f:
-        template = Template(await f.read(), autoescape=True, enable_async=True)
-
     render_params = await load_plugin_render_params(download_dir, is_flatten)
-    xml_content = await template.render_async(
-        items=render_params,
-        update_plugins_xml_url=build_url(
+    update_url = (
+        build_url(
             base=base_url if base_url.endswith("/") else f"{base_url}/",
             path="updatePlugins.xml",
         )
         if base_url is not None
         else None,
     )
-
     index_html_path = download_dir / "index.html"
-    async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:
-        await f.write(xml_content)
-
-    await aioshutil.copyfile(
-        _TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name)
+    return await render_template_to_file(
+        _TEMPLATE_INDEX_PATH,
+        _TEMPLATE_FAVICON_PATH,
+        index_html_path,
+        items=render_params,
+        update_plugins_xml_url=update_url,
     )
-
-    return index_html_path

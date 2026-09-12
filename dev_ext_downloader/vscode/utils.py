@@ -8,6 +8,7 @@ from .data import (
     VSCodeExtensionVersion,
     VSCodeExtFilterOptions,
 )
+from dev_ext_downloader.common.tools import get_download_dir
 
 
 def get_download_file_name(
@@ -24,10 +25,7 @@ def get_download_file_name(
 def get_download_file_dir(
     download_dir: Path, is_flatten: bool, extension: VSCodeExtension
 ) -> Path:
-    if is_flatten:
-        return download_dir
-    else:
-        return download_dir / extension.unified_name
+    return get_download_dir(download_dir, is_flatten, extension.unified_name)
 
 
 def get_latest_extension_versions(
@@ -35,6 +33,21 @@ def get_latest_extension_versions(
 ) -> list[VSCodeExtensionVersion]:
     result: dict[TargetPlatformType, VSCodeExtensionVersion] = {}
     fallback_version: VSCodeExtensionVersion | None = None
+    target_vscode_version = (
+        semantic_version.Version(version_filter_options.vscode_version)
+        if version_filter_options.vscode_version
+        else None
+    )
+    parsed_versions: dict[str, semantic_version.Version] = {}
+    parsed_engines: dict[str, semantic_version.NpmSpec] = {}
+
+    def parse_version(value: str) -> semantic_version.Version:
+        parsed = parsed_versions.get(value)
+        if parsed is None:
+            parsed = semantic_version.Version(value)
+            parsed_versions[value] = parsed
+        return parsed
+
     for version in extension.versions:
         version_platform: TargetPlatformType = (
             version.target_platform
@@ -53,24 +66,22 @@ def get_latest_extension_versions(
         )
         if not is_requested and not is_fallback:
             continue
-        if version_filter_options.vscode_version and version.code_engine:
-            target_vscode_version = semantic_version.Version(
-                version_filter_options.vscode_version
-            )
-            if not semantic_version.NpmSpec(version.code_engine).match(
-                target_vscode_version
-            ):
+        if target_vscode_version is not None and version.code_engine:
+            engine = parsed_engines.get(version.code_engine)
+            if engine is None:
+                engine = semantic_version.NpmSpec(version.code_engine)
+                parsed_engines[version.code_engine] = engine
+            if not engine.match(target_vscode_version):
                 continue
 
-        new_version = semantic_version.Version(version.version)
+        new_version = parse_version(version.version)
         if is_fallback and not is_requested:
             if fallback_version is None or version.sort_key > fallback_version.sort_key:
                 fallback_version = version
             continue
 
         if version_platform in result:
-            old_version = semantic_version.Version(result[version_platform].version)
-            new_version = semantic_version.Version(version.version)
+            old_version = parse_version(result[version_platform].version)
             if new_version > old_version:
                 result[version_platform] = version
         else:

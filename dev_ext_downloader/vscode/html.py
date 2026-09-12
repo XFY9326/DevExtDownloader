@@ -1,12 +1,7 @@
-from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
-import aiofile
-import aioshutil
-from jinja2 import Template
-
-from dev_ext_downloader.common.tools import iter_meta_data_json
+from dev_ext_downloader.common.render import iter_json_metadata, render_template_to_file
 
 from . import TargetPlatformType
 from .data import VSCodeExtension
@@ -16,25 +11,13 @@ _TEMPLATE_INDEX_PATH: Path = Path(__file__).parent / "assets" / "index.html.j2"
 _TEMPLATE_FAVICON_PATH: Path = Path(__file__).parent / "assets" / "favicon.ico"
 
 
-async def _iter_meta_data(
-    download_dir: Path, is_flatten: bool
-) -> AsyncGenerator[VSCodeExtension, Any]:
-    for meta_path in iter_meta_data_json(download_dir, is_flatten):
-        async with aiofile.async_open(meta_path, "r", encoding="utf-8") as f:
-            try:
-                yield VSCodeExtension.from_json(await f.read())
-            except Exception as e:
-                print(
-                    f"HTML generator warning: meta file {meta_path} could not be read.",
-                    e,
-                )
-
-
 async def _load_extensions_render_params(
     download_dir: Path, is_flatten: bool
 ) -> list[dict[str, Any]]:
     results: list = []
-    async for ext_meta_data in _iter_meta_data(download_dir, is_flatten):
+    async for ext_meta_data in iter_json_metadata(
+        download_dir, is_flatten, VSCodeExtension.from_json, "HTML generator warning"
+    ):
         versions: list[dict[str, Any]] = []
         for ext_version in ext_meta_data.versions:
             download_file_name = get_download_file_name(ext_meta_data, ext_version)
@@ -76,18 +59,11 @@ async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> P
     if not download_dir.is_dir():
         raise NotADirectoryError(download_dir)
 
-    async with aiofile.async_open(_TEMPLATE_INDEX_PATH, "r", encoding="utf-8") as f:
-        template = Template(await f.read(), autoescape=True, enable_async=True)
-
     render_params = await _load_extensions_render_params(download_dir, is_flatten)
-    html_content = await template.render_async(items=render_params)
-
     index_html_path = download_dir / "index.html"
-    async with aiofile.async_open(index_html_path, "w", encoding="utf-8") as f:
-        await f.write(html_content)
-
-    await aioshutil.copyfile(
-        _TEMPLATE_FAVICON_PATH, index_html_path.with_name(_TEMPLATE_FAVICON_PATH.name)
+    return await render_template_to_file(
+        _TEMPLATE_INDEX_PATH,
+        _TEMPLATE_FAVICON_PATH,
+        index_html_path,
+        items=render_params,
     )
-
-    return index_html_path

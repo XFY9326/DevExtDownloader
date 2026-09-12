@@ -8,7 +8,7 @@ from tqdm.asyncio import tqdm
 
 from dev_ext_downloader.common.models import DownloadOptions
 from dev_ext_downloader.common.token_locker import TokenLock
-from dev_ext_downloader.common.tools import download_file
+from dev_ext_downloader.common.tools import create_http_client, download_file
 
 from .api import VSCodeExtensionAPI
 from .data import (
@@ -69,7 +69,7 @@ async def _run_download_task(
         async with _DOWNLOAD_META_TOKEN_LOCK.lock(str(meta_data_path)):
             async with aiofile.async_open(meta_data_path, "a+", encoding="utf-8") as f:
                 has_old_meta_data = meta_data_path.is_file()
-                version_list: list[VSCodeExtensionVersion]
+                version_list: list[VSCodeExtensionVersion] = [version]
                 if not has_old_meta_data:
                     version_list = [version]
                 else:
@@ -126,7 +126,7 @@ async def _run_download_task(
                 await f.file.truncate(0)
                 f.seek(0)
                 await f.write(download_meta.to_json(indent=2, ensure_ascii=False))
-                await f.flush(sync_metadata=True)
+                await f.flush()
 
 
 async def _download_task(
@@ -182,7 +182,7 @@ async def download_latest_extensions(
     target_dir.mkdir(parents=True, exist_ok=True)
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+    async with create_http_client(concurrency) as client:
         api = VSCodeExtensionAPI(client)
 
         extensions: dict[str, VSCodeExtension] = await api.get_extensions(

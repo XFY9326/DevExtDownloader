@@ -13,7 +13,11 @@ from tenacity import (
 from tqdm.asyncio import tqdm
 
 from dev_ext_downloader.common.models import DownloadOptions
-from dev_ext_downloader.common.tools import download_file, get_file_name_last_extension
+from dev_ext_downloader.common.tools import (
+    create_http_client,
+    download_file,
+    get_file_name_last_extension,
+)
 
 from .api import JetbrainsPluginAPI
 from .data import (
@@ -123,7 +127,7 @@ async def _run_download_task(
             await f.file.truncate(0)
             f.seek(0)
             await f.write(download_meta.to_json(indent=2, ensure_ascii=False))
-            await f.flush(sync_metadata=True)
+            await f.flush()
 
 
 async def _download_task(
@@ -196,7 +200,7 @@ async def download_latest_extensions(
     target_dir.mkdir(parents=True, exist_ok=True)
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
+    async with create_http_client(concurrency) as client:
         api = JetbrainsPluginAPI(client)
         semaphore = asyncio.Semaphore(concurrency)
 

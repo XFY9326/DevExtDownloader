@@ -1,6 +1,7 @@
 import hashlib
 import os
 import re
+import uuid
 from collections.abc import Callable, Generator, Mapping
 from pathlib import Path
 from typing import Any
@@ -61,8 +62,6 @@ async def download_file(
     temp_dir.mkdir(parents=True, exist_ok=True)
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    target_tmp_path = temp_dir / hashlib.sha1(str(url).encode("utf-8")).hexdigest()
-
     if file_name and isinstance(file_name, str):
         target_final_path = target_dir / _safe_file_name(file_name)
         if skip_if_exists and target_final_path.is_file():
@@ -84,10 +83,15 @@ async def download_file(
         target_final_path = target_dir / _safe_file_name(file_name)
         if skip_if_exists and target_final_path.is_file():
             return target_final_path
+        target_tmp_path = temp_dir / (
+            hashlib.sha1(f"{url}\0{target_final_path}".encode("utf-8")).hexdigest()
+            + "-"
+            + uuid.uuid4().hex
+        )
         async with aiofile.async_open(target_tmp_path, mode="wb") as f:
-            async for chunk in response.aiter_bytes():
+            async for chunk in response.aiter_bytes(chunk_size=1024 * 1024):
                 await f.write(chunk)
-            await f.flush(sync_metadata=True)
+            await f.flush()
 
         await aioshutil.move(target_tmp_path, target_final_path)
         return target_final_path
@@ -123,6 +127,20 @@ def iter_meta_data_json(
         else:
             if p.is_dir() and (p / f"{p.name}.json").is_file():
                 yield p / f"{p.name}.json"
+
+
+def get_download_dir(download_dir: Path, is_flatten: bool, item_name: str) -> Path:
+    """Return the directory used for an item in the download tree."""
+    return download_dir if is_flatten else download_dir / item_name
+
+
+def create_http_client(concurrency: int) -> httpx.AsyncClient:
+    """Create a client whose connection pool matches the configured concurrency."""
+    limits = httpx.Limits(
+        max_connections=concurrency,
+        max_keepalive_connections=concurrency,
+    )
+    return httpx.AsyncClient(timeout=httpx.Timeout(15.0), limits=limits)
 
 
 def pretty_bytes(num_bytes: int, precision: int = 2) -> str:

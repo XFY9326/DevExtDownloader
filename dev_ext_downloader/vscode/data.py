@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import enum
+import functools
 
 import semantic_version
 from dataclasses_json import DataClassJsonMixin, config
@@ -55,11 +56,23 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
     files: tuple[VSCodeExtensionFile, ...]
     properties: tuple[VSCodeExtensionProperty, ...]
 
+    @functools.cached_property
+    def _file_sources(self) -> dict[str, str]:
+        return {item.asset_type: item.source for item in self.files}
+
+    @functools.cached_property
+    def _property_values(self) -> dict[str, str]:
+        return {item.key: item.value for item in self.properties}
+
+    @functools.cached_property
+    def _semantic_version(self) -> semantic_version.Version:
+        return semantic_version.Version(self.version)
+
     def get_file_source(self, asset_type: str) -> str | None:
-        return next((i.source for i in self.files if i.asset_type == asset_type), None)
+        return self._file_sources.get(asset_type)
 
     def get_property_value(self, key: str) -> str | None:
-        return next((i.value for i in self.properties if i.key == key), None)
+        return self._property_values.get(key)
 
     @property
     def package_url(self) -> str:
@@ -81,7 +94,7 @@ class VSCodeExtensionVersion(DataClassJsonMixin):
     @property
     def sort_key(self) -> tuple:
         """Return a deterministic key without mutating semantic-version internals."""
-        version = semantic_version.Version(self.version)
+        version = self._semantic_version
         return (
             version.precedence_key,
             not self.prerelease,
