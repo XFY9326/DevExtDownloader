@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -56,7 +57,10 @@ async def load_plugin_render_params(
 
 
 async def generate_index_html(
-    base_url: str | None, download_dir: Path, is_flatten: bool = False
+    base_url: str | None,
+    download_dir: Path,
+    is_flatten: bool = False,
+    generation_parameters: dict[str, str] | None = None,
 ) -> Path:
     if base_url is not None and not is_valid_http_url(base_url):
         raise ValueError(f"Invalid http base url: {base_url}")
@@ -70,7 +74,7 @@ async def generate_index_html(
             path="updatePlugins.xml",
         )
         if base_url is not None
-        else None,
+        else None
     )
     index_html_path = download_dir / "index.html"
     return await render_template_to_file(
@@ -79,4 +83,18 @@ async def generate_index_html(
         index_html_path,
         items=render_params,
         update_plugins_xml_url=update_url,
+        page_info={
+            "generated_at": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"),
+            "download_dir": str(download_dir),
+            "is_flatten": is_flatten,
+            "base_url": base_url,
+            "plugin_count": len(render_params),
+            "version_count": sum(len(item["versions"]) for item in render_params),
+            "parameters": generation_parameters
+            or {
+                "base_url": str(base_url),
+                "download_dir": str(download_dir),
+                "is_flatten": str(is_flatten),
+            },
+        },
     )

@@ -1,4 +1,5 @@
 import asyncio
+import json
 import shutil
 from pathlib import Path
 
@@ -77,6 +78,15 @@ except:  # noqa: E722
     pass
 
 
+def get_generation_parameters() -> dict[str, str]:
+    return {
+        "TARGET_PLATFORM": json.dumps(TARGET_PLATFORM, ensure_ascii=False),
+        "TARGET_PLATFORM_FALLBACK": str(TARGET_PLATFORM_FALLBACK),
+        "VSCODE_VERSION": str(VSCODE_VERSION),
+        "INCLUDE_PRERELEASE": str(INCLUDE_PRERELEASE),
+    }
+
+
 async def main() -> None:
     await download_latest_extensions(
         query_ext=VSIX_LIST,
@@ -98,7 +108,11 @@ async def main() -> None:
         ),
     )
     if not NO_METADATA:
-        await generate_index_html(download_dir=DOWNLOAD_DIR, is_flatten=FLATTEN_DIR)
+        await generate_index_html(
+            download_dir=DOWNLOAD_DIR,
+            is_flatten=FLATTEN_DIR,
+            generation_parameters=get_generation_parameters(),
+        )
 
 
 if __name__ == "__main__":

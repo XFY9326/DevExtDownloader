@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -55,7 +56,11 @@ async def _load_extensions_render_params(
     return results
 
 
-async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> Path:
+async def generate_index_html(
+    download_dir: Path,
+    is_flatten: bool = False,
+    generation_parameters: dict[str, str] | None = None,
+) -> Path:
     if not download_dir.is_dir():
         raise NotADirectoryError(download_dir)
 
@@ -66,4 +71,16 @@ async def generate_index_html(download_dir: Path, is_flatten: bool = False) -> P
         _TEMPLATE_FAVICON_PATH,
         index_html_path,
         items=render_params,
+        page_info={
+            "generated_at": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z"),
+            "download_dir": str(download_dir),
+            "is_flatten": is_flatten,
+            "extension_count": len(render_params),
+            "version_count": sum(len(item["versions"]) for item in render_params),
+            "parameters": generation_parameters
+            or {
+                "download_dir": str(download_dir),
+                "is_flatten": str(is_flatten),
+            },
+        },
     )

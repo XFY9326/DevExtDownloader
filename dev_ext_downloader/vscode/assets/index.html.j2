@@ -2,338 +2,240 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>VSCode 扩展下载列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VS Code 扩展下载</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <!--suppress CssUnusedSymbol -->
     <style>
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
+        :root {
+            color-scheme: light dark;
+            --accent: #0969da; --accent-hover: #0759b8; --bg: #f6f8fa;
+            --surface: #fff; --text: #1f2328; --muted: #656d76;
+            --border: #d0d7de; --tag-bg: #ddf4ff; --tag-text: #0550ae;
+            --shadow: 0 1px 3px rgba(31, 35, 40, .08);
         }
-
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: "Segoe UI", "PingFang SC", sans-serif;
-            background: #f5f7fa;
-            color: #333;
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+        button, input { font: inherit; }
+        button, summary, a { -webkit-tap-highlight-color: transparent; }
+        .page { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0; }
+        .hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 24px; }
+        h1 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 36px); line-height: 1.2; }
+        .subtitle { margin: 0; color: var(--muted); }
+        .icon-button { display: grid; place-items: center; flex: 0 0 auto; width: 40px; height: 40px; padding: 0; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 50%; cursor: pointer; box-shadow: var(--shadow); }
+        .icon-button:hover { color: var(--accent); border-color: var(--accent); }
+        .icon-button svg { width: 20px; height: 20px; }
+        .button { padding: 9px 14px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .button:hover { color: var(--accent); border-color: var(--accent); }
+        .toolbar { position: sticky; top: 0; z-index: 10; display: flex; gap: 12px; align-items: center; padding: 12px 0; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); }
+        .search-wrap { position: relative; flex: 1; }
+        .search-icon { position: absolute; left: 13px; top: 0; bottom: 0; display: grid; place-items: center; color: var(--muted); pointer-events: none; }
+        .search-icon svg { display: block; width: 18px; height: 18px; }
+        #searchInput { width: 100%; min-height: 44px; padding: 9px 42px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; outline: none; box-shadow: var(--shadow); }
+        #searchInput::-webkit-search-cancel-button { appearance: none; }
+        #searchInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+        #clearSearch { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border: 0; border-radius: 7px; color: var(--muted); background: transparent; cursor: pointer; }
+        #clearSearch:hover { background: var(--bg); color: var(--text); }
+        #clearSearch[hidden] { display: none; }
+        .result-count { color: var(--muted); white-space: nowrap; font-size: 14px; }
+        .cards { display: grid; gap: 12px; }
+        .card { overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+        .card summary { display: flex; gap: 16px; justify-content: space-between; align-items: center; min-height: 72px; padding: 16px 18px; cursor: pointer; list-style: none; }
+        .card summary::-webkit-details-marker { display: none; }
+        .card summary::after { content: "⌄"; color: var(--muted); font-size: 22px; transition: transform .18s ease; }
+        .card details[open] summary::after { transform: rotate(180deg); }
+        .card summary:hover .name { color: var(--accent); }
+        .title { min-width: 0; }
+        .title-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .name { font-size: 17px; font-weight: 650; overflow-wrap: anywhere; }
+        .publisher { color: var(--muted); font-size: 13px; }
+        .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+        .tag { padding: 2px 8px; border-radius: 999px; color: var(--tag-text); background: var(--tag-bg); font-size: 12px; }
+        .content { padding: 0 18px 18px; border-top: 1px solid var(--border); }
+        .meta { margin: 14px 0 6px; color: var(--muted); font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+        .description { margin: 0 0 16px; color: var(--muted); white-space: pre-line; }
+        .versions { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+        .version { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 11px 12px; background: var(--bg); border-radius: 8px; }
+        .version strong { display: block; }
+        .version small { color: var(--muted); }
+        .download { flex: 0 0 auto; padding: 7px 14px; color: #fff; background: var(--accent); border-radius: 7px; text-decoration: none; font-weight: 600; }
+        .download:hover { background: var(--accent-hover); }
+        .empty { padding: 64px 16px; text-align: center; color: var(--muted); }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 24px; }
+        .pagination button, .pagination span { min-width: 36px; padding: 6px 9px; text-align: center; }
+        .pagination button { color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 7px; cursor: pointer; }
+        .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .pagination button[aria-current="page"] { color: #fff; background: var(--accent); border-color: var(--accent); }
+        .pagination button:disabled { opacity: .45; cursor: default; }
+        .modal { width: min(560px, calc(100% - 28px)); padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 18px 60px rgba(0, 0, 0, .3); }
+        .modal::backdrop { background: rgba(0, 0, 0, .52); backdrop-filter: blur(2px); }
+        .modal-body { max-height: min(80vh, 720px); padding: 22px; overflow: auto; }
+        .modal h2 { margin: 0 0 10px; font-size: 21px; }
+        .info-list { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 18px; margin: 18px 0 0; }
+        .info-list dt { color: var(--muted); }
+        .info-list dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+        .info-list code { font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+        .parameters-title { margin: 22px 0 10px; font-size: 15px; }
+        .parameter-list { margin: 0; border: 1px solid var(--border); border-radius: 9px; }
+        .parameter { padding: 10px 12px; }
+        .parameter + .parameter { border-top: 1px solid var(--border); }
+        .parameter dt { color: var(--muted); font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+        .parameter dd { margin: 3px 0 0; }
+        .parameter pre { margin: 0; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+        .modal-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+        @media (max-width: 600px) {
+            .page { width: min(100% - 20px, 1040px); padding: 28px 0; }
+            .hero { align-items: flex-start; }
+            .toolbar { align-items: stretch; flex-direction: column; }
+            .result-count { padding-left: 2px; }
+            .version { align-items: flex-start; }
         }
-
-        h1 {
-            text-align: center;
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .search-bar {
-            max-width: 60vh;
-            margin: 40px auto;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 8px 12px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
-            overflow: hidden;
-            transition: transform .1s;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .card details {
-            padding: 16px;
-        }
-
-        summary::-webkit-details-marker, summary::marker {
-            display: none;
-        }
-
-        .summary-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-        }
-
-        .title-group {
-            display: inline-flex;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .display-name {
-            font-size: 1.1em;
-            font-weight: 600;
-            margin-right: 8px;
-        }
-
-        .publisher {
-            font-size: 0.9em;
-            color: #666;
-            margin-right: 8px;
-        }
-
-        summary:hover .display-name {
-            color: #007acc;
-        }
-
-        summary::after {
-            content: '▼';
-            font-size: 0.8em;
-            color: #888;
-            transition: transform 0.2s;
-        }
-
-        details[open] summary::after {
-            content: '▲';
-        }
-
-        .tag {
-            background: #e8f0fe;
-            color: #1967d2;
-            border-radius: 12px;
-            padding: 2px 8px;
-            font-size: 0.8em;
-            margin: 4px 4px 0 0;
-        }
-
-        .description {
-            margin: 10px 0;
-            font-size: 0.95em;
-            color: #555;
-        }
-
-        .version-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .version-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .version-info {
-            flex: 1;
-        }
-
-        .download-link {
-            background: #007acc;
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 0.9em;
-            margin-left: 16px;
-            white-space: nowrap;
-        }
-
-        .download-link:hover {
-            background: #005fa3;
-        }
-
-        /* 分页样式 */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
-
-        .pagination button {
-            margin: 0 4px;
-            padding: 6px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        .pagination button.active {
-            background: #007acc;
-            color: #fff;
-            border-color: #007acc;
-        }
-
-        .pagination button.disabled {
-            opacity: 0.5;
-            cursor: default;
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --muted: #8b949e; --border: #30363d; --tag-bg: #122b45; --tag-text: #79c0ff; --shadow: none; }
         }
     </style>
 </head>
 <body>
-<h1>VSCode 扩展下载列表</h1>
-<div class="search-bar">
-    <label for="searchInput" class="sr-only">搜索扩展名称、发布者或分类</label>
-    <input type="text" id="searchInput" placeholder="搜索扩展名称、发布者或分类…">
-</div>
-<div id="cardsContainer"></div>
-<div id="pagination" class="pagination"></div>
-
+<main class="page">
+    <header class="hero">
+        <div>
+            <h1>VS Code 扩展</h1>
+            <p class="subtitle">浏览并下载已归档的扩展版本</p>
+        </div>
+        <button id="pageInfoBtn" class="icon-button" type="button" title="页面信息" aria-label="查看页面信息"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm-1-9h2v6h-2v-6Zm0-4h2v2h-2V7Z"></path></svg></button>
+    </header>
+    <div class="toolbar">
+        <div class="search-wrap">
+            <label class="sr-only" for="searchInput">搜索扩展</label>
+            <span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></span>
+            <input id="searchInput" type="search" placeholder="搜索名称、发布者、ID 或分类" autocomplete="off">
+            <button id="clearSearch" type="button" title="清空搜索" aria-label="清空搜索" hidden>×</button>
+        </div>
+        <div id="resultCount" class="result-count" aria-live="polite"></div>
+    </div>
+    <section id="cardsContainer" class="cards" aria-label="扩展列表"></section>
+    <nav id="pagination" class="pagination" aria-label="分页"></nav>
+</main>
+<dialog id="pageInfoModal" class="modal" aria-labelledby="pageInfoTitle">
+    <div class="modal-body">
+        <h2 id="pageInfoTitle">页面生成信息</h2>
+        <dl class="info-list">
+            <dt>生成时间</dt><dd>{{ page_info.generated_at }}</dd>
+            <dt>扩展数量</dt><dd>{{ page_info.extension_count }}</dd>
+            <dt>版本数量</dt><dd>{{ page_info.version_count }}</dd>
+        </dl>
+        <h3 class="parameters-title">全部运行参数</h3>
+        <dl class="parameter-list">
+            {% for name, value in page_info.parameters.items() %}<div class="parameter"><dt>{{ name }}</dt><dd><pre>{{ value }}</pre></dd></div>{% endfor %}
+        </dl>
+        <div class="modal-actions"><button id="closePageInfoBtn" class="button" type="button">关闭</button></div>
+    </div>
+</dialog>
 <script>
-    /**
-     * @typedef {Object} ExtensionVersion
-     * @property {string} version
-     * @property {boolean} prerelease
-     * @property {string} target_platform
-     * @property {string} code_engine
-     * @property {string} last_updated
-     * @property {string} file_url
-     */
-
-    /**
-     * @typedef {Object} ExtensionItem
-     * @property {string} extension_id
-     * @property {string} display_name
-     * @property {string} publisher_name
-     * @property {string[]} categories
-     * @property {string} short_description
-     * @property {ExtensionVersion[]} versions
-     */
-
-    /** @type {ExtensionItem[]} */
     const items = {{ items | tojson }};
-</script>
-
-<script>
     const container = document.getElementById('cardsContainer');
-    const paginationEl = document.getElementById('pagination');
-    /** @type {HTMLInputElement} */
+    const pagination = document.getElementById('pagination');
     const searchInput = document.getElementById('searchInput');
-    const itemsPerPage = 50;
+    const clearSearch = document.getElementById('clearSearch');
+    const resultCount = document.getElementById('resultCount');
+    const itemsPerPage = 30;
     let currentPage = 1;
     let filteredItems = items.slice();
 
+    function addText(parent, tagName, className, text) {
+        const element = document.createElement(tagName);
+        if (className) element.className = className;
+        element.textContent = text;
+        parent.appendChild(element);
+        return element;
+    }
+
     function createCard(item) {
-        const card = document.createElement('div');
-        card.className = 'card';
-        const searchText = [item.display_name, item.publisher_name, item.extension_id, ...(item.categories || [])].join(' ').toLowerCase();
-        card.setAttribute('data-search', searchText);
+        const article = document.createElement('article');
+        article.className = 'card';
         const details = document.createElement('details');
         const summary = document.createElement('summary');
-        summary.className = 'summary-header';
-        const titleGroup = document.createElement('span');
-        titleGroup.className = 'title-group';
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'display-name';
-        nameSpan.textContent = item.display_name;
-        const pubSpan = document.createElement('span');
-        pubSpan.className = 'publisher';
-        pubSpan.textContent = `by ${item.publisher_name}`;
-        titleGroup.append(nameSpan, pubSpan);
-        for (const cat of item.categories) {
-            const tag = document.createElement('span');
-            tag.className = 'tag';
-            tag.textContent = cat;
-            titleGroup.appendChild(tag);
+        const title = addText(summary, 'div', 'title', '');
+        const titleLine = addText(title, 'div', 'title-line', '');
+        addText(titleLine, 'span', 'name', item.display_name);
+        addText(titleLine, 'span', 'publisher', `by ${item.publisher_name}`);
+        if (item.categories?.length) {
+            const tags = addText(title, 'div', 'tags', '');
+            item.categories.forEach(category => addText(tags, 'span', 'tag', category));
         }
-        summary.appendChild(titleGroup);
         details.appendChild(summary);
-        const idLine = document.createElement('p');
-        idLine.className = 'description';
-        idLine.textContent = `ID：${item.extension_id}`;
-        details.appendChild(idLine);
-        const desc = document.createElement('p');
-        desc.className = 'description';
-        desc.textContent = item.short_description;
-        details.appendChild(desc);
-        const ul = document.createElement('ul');
-        ul.className = 'version-list';
-        for (const ver of item.versions) {
-            const li = document.createElement('li');
-            li.className = 'version-item';
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'version-info';
-            infoDiv.textContent = `${ver.version}${ver.prerelease ? ' (预发布)' : ''}\n` +
-                `平台：${ver.target_platform}\n引擎：${ver.code_engine}\n更新时间：${ver.last_updated}`;
-            const link = document.createElement('a');
-            link.className = 'download-link';
-            link.href = ver.file_url;
+        const content = addText(details, 'div', 'content', '');
+        addText(content, 'p', 'meta', item.extension_id);
+        if (item.short_description) addText(content, 'p', 'description', item.short_description);
+        const versions = addText(content, 'ul', 'versions', '');
+        item.versions.forEach(version => {
+            const row = addText(versions, 'li', 'version', '');
+            const info = addText(row, 'div', '', '');
+            addText(info, 'strong', '', `${version.version}${version.prerelease ? ' · 预发布' : ''}`);
+            addText(info, 'small', '', `${version.target_platform} · 引擎 ${version.code_engine} · ${version.last_updated}`);
+            const link = addText(row, 'a', 'download', '下载');
+            link.href = version.file_url;
             link.download = '';
-            link.textContent = '下载';
-            li.append(infoDiv, link);
-            ul.appendChild(li);
-        }
-        details.appendChild(ul);
-        card.appendChild(details);
-        return card;
+        });
+        article.appendChild(details);
+        return article;
     }
 
-    function renderPage(page) {
-        currentPage = page;
-        const start = (page - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        container.innerHTML = '';
-        filteredItems.slice(start, end).forEach(item => container.appendChild(createCard(item)));
-        renderPagination();
+    function pageButton(label, page, disabled = false, current = false) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.disabled = disabled;
+        button.setAttribute('aria-label', label);
+        if (current) button.setAttribute('aria-current', 'page');
+        if (!disabled) button.addEventListener('click', () => render(page));
+        return button;
     }
 
-    function renderPagination() {
-        const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
-        paginationEl.innerHTML = '';
-        const createBtn = (text, page, disabled = false) => {
-            const btn = document.createElement('button');
-            btn.textContent = text;
-            if (disabled) btn.classList.add('disabled');
-            if (page === currentPage) btn.classList.add('active');
-            if (!disabled) btn.addEventListener('click', () => renderPage(page));
-            return btn;
-        };
-
-        paginationEl.appendChild(createBtn('<<', 1, currentPage === 1));
-        paginationEl.appendChild(createBtn('<', Math.max(1, currentPage - 1), currentPage === 1));
-
+    function renderPagination(totalPages) {
+        pagination.replaceChildren();
+        if (totalPages <= 1) return;
+        pagination.append(pageButton('上一页', currentPage - 1, currentPage === 1));
         let pages;
-        if (totalPages <= 7) pages = Array.from({length: totalPages}, (_, i) => i + 1);
-        else if (currentPage <= 4) pages = [1, 2, 3, 4, 5, '...', totalPages];
-        else if (currentPage >= totalPages - 3) pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-        else pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-
-        pages.forEach(p => {
-            if (p === '...') {
-                const span = document.createElement('span');
-                span.textContent = '...';
-                paginationEl.appendChild(span);
-            } else {
-                paginationEl.appendChild(createBtn(p, p));
-            }
+        if (totalPages <= 7) pages = Array.from({length: totalPages}, (_, index) => index + 1);
+        else if (currentPage <= 4) pages = [1, 2, 3, 4, 5, '…', totalPages];
+        else if (currentPage >= totalPages - 3) pages = [1, '…', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        else pages = [1, '…', currentPage - 1, currentPage, currentPage + 1, '…', totalPages];
+        pages.forEach(page => {
+            if (page === '…') addText(pagination, 'span', '', page);
+            else pagination.append(pageButton(String(page), page, false, page === currentPage));
         });
-        paginationEl.appendChild(createBtn('>', Math.min(totalPages, currentPage + 1), currentPage === totalPages));
-        paginationEl.appendChild(createBtn('>>', totalPages, currentPage === totalPages));
+        pagination.append(pageButton('下一页', currentPage + 1, currentPage === totalPages));
     }
 
-    searchInput.addEventListener('input', () => {
-        const keys = searchInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-        filteredItems = items.filter(item => {
-            const text = [item.display_name, item.publisher_name, item.extension_id, ...(item.categories || [])].join(' ').toLowerCase();
-            return keys.every(k => text.includes(k));
-        });
-        renderPage(1);
-    });
+    function render(page = 1) {
+        const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+        currentPage = Math.min(Math.max(page, 1), totalPages);
+        container.replaceChildren();
+        const pageItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        if (pageItems.length) pageItems.forEach(item => container.appendChild(createCard(item)));
+        else addText(container, 'div', 'empty', '没有找到匹配的扩展');
+        resultCount.textContent = `共 ${filteredItems.length} 个扩展`;
+        renderPagination(totalPages);
+    }
 
-    renderPage(1);
+    function filterItems() {
+        const keywords = searchInput.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+        filteredItems = items.filter(item => {
+            const text = [item.display_name, item.publisher_name, item.extension_id, ...(item.categories || [])].join(' ').toLocaleLowerCase();
+            return keywords.every(keyword => text.includes(keyword));
+        });
+        clearSearch.hidden = !searchInput.value;
+        render(1);
+    }
+
+    searchInput.addEventListener('input', filterItems);
+    clearSearch.addEventListener('click', () => { searchInput.value = ''; filterItems(); searchInput.focus(); });
+    const pageInfoModal = document.getElementById('pageInfoModal');
+    document.getElementById('pageInfoBtn').addEventListener('click', () => pageInfoModal.showModal());
+    document.getElementById('closePageInfoBtn').addEventListener('click', () => pageInfoModal.close());
+    pageInfoModal.addEventListener('click', event => { if (event.target === pageInfoModal) pageInfoModal.close(); });
+    render();
 </script>
 </body>
 </html>

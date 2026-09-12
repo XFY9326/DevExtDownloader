@@ -68,6 +68,13 @@ except:  # noqa: E722
     pass
 
 
+def get_generation_parameters() -> dict[str, str]:
+    return {
+        "TARGET_BUILD_VERSION": str(TARGET_BUILD_VERSION),
+        "PLUGINS_DOWNLOAD_BASE_URL": str(PLUGINS_DOWNLOAD_BASE_URL),
+    }
+
+
 async def main() -> None:
     await download_latest_extensions(
         plugins_def=PLUGINS_LIST,
@@ -88,6 +95,7 @@ async def main() -> None:
             base_url=PLUGINS_DOWNLOAD_BASE_URL,
             download_dir=DOWNLOAD_DIR,
             is_flatten=FLATTEN_DIR,
+            generation_parameters=get_generation_parameters(),
         )
     if not NO_METADATA and PLUGINS_DOWNLOAD_BASE_URL is not None:
         await generate_update_plugins_xml(

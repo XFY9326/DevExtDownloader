@@ -2,512 +2,297 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>JetBrains 插件下载列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>JetBrains 插件下载</title>
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <!--suppress CssUnusedSymbol -->
     <style>
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            border: 0;
+        :root {
+            color-scheme: light dark;
+            --accent: #6f42c1; --accent-hover: #59359a; --bg: #f6f8fa;
+            --surface: #fff; --text: #1f2328; --muted: #656d76;
+            --border: #d0d7de; --tag-bg: #f2eafe; --tag-text: #6639ba;
+            --shadow: 0 1px 3px rgba(31, 35, 40, .08);
         }
-
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: "Segoe UI", "PingFang SC", sans-serif;
-            background: #f5f7fa;
-            color: #333;
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+        button, input { font: inherit; }
+        button, summary, a { -webkit-tap-highlight-color: transparent; }
+        .page { width: min(1040px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0; }
+        .hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 24px; }
+        h1 { margin: 0 0 6px; font-size: clamp(26px, 4vw, 36px); line-height: 1.2; }
+        .subtitle { margin: 0; color: var(--muted); }
+        .hero-actions { display: flex; align-items: center; gap: 8px; }
+        .icon-button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 50%; cursor: pointer; box-shadow: var(--shadow); }
+        .icon-button:hover { color: var(--accent); border-color: var(--accent); }
+        .icon-button svg { width: 20px; height: 20px; }
+        .button { padding: 9px 14px; color: #fff; background: var(--accent); border: 0; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .button:hover { background: var(--accent-hover); }
+        .button.secondary { color: var(--text); background: var(--bg); border: 1px solid var(--border); }
+        .button.secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .toolbar { position: sticky; top: 0; z-index: 10; display: flex; gap: 12px; align-items: center; padding: 12px 0; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); }
+        .search-wrap { position: relative; flex: 1; }
+        .search-icon { position: absolute; left: 13px; top: 0; bottom: 0; display: grid; place-items: center; color: var(--muted); pointer-events: none; }
+        .search-icon svg { display: block; width: 18px; height: 18px; }
+        #searchInput { width: 100%; min-height: 44px; padding: 9px 42px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; outline: none; box-shadow: var(--shadow); }
+        #searchInput::-webkit-search-cancel-button { appearance: none; }
+        #searchInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+        #clearSearch { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; border: 0; border-radius: 7px; color: var(--muted); background: transparent; cursor: pointer; }
+        #clearSearch:hover { background: var(--bg); color: var(--text); }
+        #clearSearch[hidden] { display: none; }
+        .result-count { color: var(--muted); white-space: nowrap; font-size: 14px; }
+        .cards { display: grid; gap: 12px; }
+        .card { overflow: hidden; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); }
+        .card summary { display: flex; gap: 16px; justify-content: space-between; align-items: center; min-height: 72px; padding: 16px 18px; cursor: pointer; list-style: none; }
+        .card summary::-webkit-details-marker { display: none; }
+        .card summary::after { content: "⌄"; color: var(--muted); font-size: 22px; transition: transform .18s ease; }
+        .card details[open] summary::after { transform: rotate(180deg); }
+        .card summary:hover .name { color: var(--accent); }
+        .title { min-width: 0; }
+        .title-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .name { font-size: 17px; font-weight: 650; overflow-wrap: anywhere; }
+        .vendor { color: var(--muted); font-size: 13px; }
+        .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+        .tag { padding: 2px 8px; border-radius: 999px; color: var(--tag-text); background: var(--tag-bg); font-size: 12px; }
+        .content { padding: 0 18px 18px; border-top: 1px solid var(--border); }
+        .meta { margin: 14px 0 6px; color: var(--muted); font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; overflow-wrap: anywhere; }
+        .description { max-height: 180px; margin: 0 0 16px; overflow: auto; color: var(--muted); white-space: pre-line; scrollbar-width: thin; }
+        .versions { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+        .version { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 11px 12px; background: var(--bg); border-radius: 8px; }
+        .version strong { display: block; }
+        .version small { color: var(--muted); }
+        .download { flex: 0 0 auto; padding: 7px 14px; color: #fff; background: var(--accent); border-radius: 7px; text-decoration: none; font-weight: 600; }
+        .download:hover { background: var(--accent-hover); }
+        .empty { padding: 64px 16px; text-align: center; color: var(--muted); }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 5px; flex-wrap: wrap; margin-top: 24px; }
+        .pagination button, .pagination span { min-width: 36px; padding: 6px 9px; text-align: center; }
+        .pagination button { color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 7px; cursor: pointer; }
+        .pagination button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+        .pagination button[aria-current="page"] { color: #fff; background: var(--accent); border-color: var(--accent); }
+        .pagination button:disabled { opacity: .45; cursor: default; }
+        .modal { width: min(560px, calc(100% - 28px)); padding: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 18px 60px rgba(0, 0, 0, .3); }
+        .modal::backdrop { background: rgba(0, 0, 0, .52); backdrop-filter: blur(2px); }
+        .modal-body { max-height: min(80vh, 720px); padding: 22px; overflow: auto; }
+        .modal h2 { margin: 0 0 10px; font-size: 21px; }
+        .modal ol { margin: 10px 0 18px; padding-left: 22px; color: var(--muted); }
+        .modal li + li { margin-top: 5px; }
+        .info-list { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 18px; margin: 18px 0 0; }
+        .info-list dt { color: var(--muted); }
+        .info-list dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
+        .info-list code { font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+        .parameters-title { margin: 22px 0 10px; font-size: 15px; }
+        .parameter-list { margin: 0; border: 1px solid var(--border); border-radius: 9px; }
+        .parameter { padding: 10px 12px; }
+        .parameter + .parameter { border-top: 1px solid var(--border); }
+        .parameter dt { color: var(--muted); font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+        .parameter dd { margin: 3px 0 0; }
+        .parameter pre { margin: 0; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+        .url-row { display: flex; gap: 8px; }
+        #pluginUrlInput { min-width: 0; flex: 1; padding: 9px 10px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font: 13px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+        .modal-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+        @media (max-width: 600px) {
+            .page { width: min(100% - 20px, 1040px); padding: 28px 0; }
+            .hero { align-items: flex-start; flex-direction: column; }
+            .toolbar { align-items: stretch; flex-direction: column; }
+            .result-count { padding-left: 2px; }
+            .version, .url-row { align-items: flex-start; }
         }
-
-        h1 {
-            text-align: center;
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .search-bar {
-            max-width: 60vh;
-            margin: 40px auto;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 8px 12px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            margin-bottom: 16px;
-            overflow: hidden;
-            transition: transform .1s;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
-        .card details {
-            padding: 16px;
-        }
-
-        summary::-webkit-details-marker,
-        summary::marker {
-            display: none;
-        }
-
-        .summary-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-        }
-
-        .title-group {
-            display: inline-flex;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .plugin-name {
-            font-size: 1.1em;
-            font-weight: 600;
-            margin-right: 8px;
-        }
-
-        .vendor {
-            font-size: 0.9em;
-            color: #666;
-            margin-right: 8px;
-        }
-
-        summary:hover .plugin-name {
-            color: #007acc;
-        }
-
-        summary::after {
-            content: '▼';
-            font-size: 0.8em;
-            color: #888;
-            transition: transform 0.2s;
-        }
-
-        details[open] summary::after {
-            content: '▲';
-        }
-
-        .tag {
-            background: #e8f0fe;
-            color: #1967d2;
-            border-radius: 12px;
-            padding: 2px 8px;
-            font-size: 0.8em;
-            margin: 4px 4px 0 0;
-        }
-
-        .description {
-            margin: 10px 0;
-            font-size: 0.95em;
-            color: #555;
-            max-height: 200px;
-            overflow-y: auto;
-            padding-right: 8px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
-        }
-
-        .description::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .description::-webkit-scrollbar-thumb {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 3px;
-        }
-
-        .version-list {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-
-        .version-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .version-info {
-            flex: 1;
-        }
-
-        .download-link {
-            background: #007acc;
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 0.9em;
-            margin-left: 16px;
-            white-space: nowrap;
-        }
-
-        .download-link:hover {
-            background: #005fa3;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
-
-        .pagination button {
-            margin: 0 4px;
-            padding: 6px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        .pagination button.active {
-            background: #007acc;
-            color: #fff;
-            border-color: #007acc;
-        }
-
-        .pagination button.disabled {
-            opacity: 0.5;
-            cursor: default;
-        }
-
-        /* 自定义源仓库按钮样式 */
-        #customSourceBtn {
-            background: #007acc;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-
-        #customSourceBtn:hover {
-            background: #005fa3;
-        }
-
-        /* 模态框样式 */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            position: relative;
-        }
-
-        .modal-content h2 {
-            margin-top: 0;
-        }
-
-        .modal-content ol {
-            padding-left: 20px;
-        }
-
-        .modal-content li {
-            margin-bottom: 8px;
-        }
-
-        .url-input {
-            width: 96%;
-            padding: 8px;
-            margin-top: 4px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-
-        .modal-buttons {
-            margin-top: 20px;
-            text-align: right;
-        }
-
-        .modal-button {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 8px;
-        }
-
-        .copy-button {
-            background: #007acc;
-            color: white;
-        }
-
-        .close-button {
-            background: #ccc;
-            color: black;
-        }
-
-        .copy-button:hover {
-            background: #005fa3;
-        }
-
-        .close-button:hover {
-            background: #bbb;
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #0d1117; --surface: #161b22; --text: #e6edf3; --muted: #8b949e; --border: #30363d; --tag-bg: #2b2140; --tag-text: #d2b8ff; --shadow: none; }
         }
     </style>
 </head>
 <body>
-<!-- 右上角按钮 -->
-{% if update_plugins_xml_url %}
-    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
-        <button id="customSourceBtn">自定义插件源</button>
-    </div>
-{% endif %}
-
-<h1>JetBrains 插件下载列表</h1>
-<div class="search-bar">
-    <label for="searchInput" class="sr-only">搜索插件名称、发布者、分类或标签</label>
-    <input type="text" id="searchInput" placeholder="搜索插件名称、发布者、分类或标签…">
-</div>
-<div id="cardsContainer"></div>
-<div id="pagination" class="pagination"></div>
-
-<!-- 模态框 -->
-{% if update_plugins_xml_url %}
-    <div id="customSourceModal" class="modal">
-        <div class="modal-content">
-            <h2>添加自定义插件源</h2>
-            <p>在 IntelliJ IDEA 中添加自定义插件源的方法如下：</p>
-            <ol>
-                <li>打开 <strong>Settings</strong>（Windows/Linux）或 <strong>Preferences</strong>（macOS）</li>
-                <li>导航到 <strong>Plugins</strong></li>
-                <li>点击右上角的齿轮图标，选择 <strong>Manage Plugin Repositories...</strong></li>
-                <li>点击 <strong>+</strong> 添加以下 <label for="pluginUrlInput">URL</label>：</li>
-            </ol>
-            <input type="text" id="pluginUrlInput" value="{{ update_plugins_xml_url }}" readonly class="url-input">
-            <div class="modal-buttons">
-                <button id="copyUrlBtn" class="modal-button copy-button">复制 URL</button>
-                <button id="closeModalBtn" class="modal-button close-button">关闭</button>
-            </div>
+<main class="page">
+    <header class="hero">
+        <div>
+            <h1>JetBrains 插件</h1>
+            <p class="subtitle">浏览并下载已归档的插件版本</p>
         </div>
+        <div class="hero-actions">
+            <button id="pageInfoBtn" class="icon-button" type="button" title="页面信息" aria-label="查看页面信息"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm-1-9h2v6h-2v-6Zm0-4h2v2h-2V7Z"></path></svg></button>
+            {% if update_plugins_xml_url %}<button id="customSourceBtn" class="button" type="button">添加插件源</button>{% endif %}
+        </div>
+    </header>
+    <div class="toolbar">
+        <div class="search-wrap">
+            <label class="sr-only" for="searchInput">搜索插件</label>
+            <span class="search-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></span>
+            <input id="searchInput" type="search" placeholder="搜索名称、开发者、ID、分类或标签" autocomplete="off">
+            <button id="clearSearch" type="button" title="清空搜索" aria-label="清空搜索" hidden>×</button>
+        </div>
+        <div id="resultCount" class="result-count" aria-live="polite"></div>
     </div>
+    <section id="cardsContainer" class="cards" aria-label="插件列表"></section>
+    <nav id="pagination" class="pagination" aria-label="分页"></nav>
+</main>
+
+<dialog id="pageInfoModal" class="modal" aria-labelledby="pageInfoTitle">
+    <div class="modal-body">
+        <h2 id="pageInfoTitle">页面生成信息</h2>
+        <dl class="info-list">
+            <dt>生成时间</dt><dd>{{ page_info.generated_at }}</dd>
+            <dt>插件数量</dt><dd>{{ page_info.plugin_count }}</dd>
+            <dt>版本数量</dt><dd>{{ page_info.version_count }}</dd>
+        </dl>
+        <h3 class="parameters-title">全部运行参数</h3>
+        <dl class="parameter-list">
+            {% for name, value in page_info.parameters.items() %}<div class="parameter"><dt>{{ name }}</dt><dd><pre>{{ value }}</pre></dd></div>{% endfor %}
+        </dl>
+        <div class="modal-actions"><button id="closePageInfoBtn" class="button secondary" type="button">关闭</button></div>
+    </div>
+</dialog>
+
+{% if update_plugins_xml_url %}
+<dialog id="customSourceModal" class="modal" aria-labelledby="modalTitle">
+    <div class="modal-body">
+        <h2 id="modalTitle">添加自定义插件源</h2>
+        <ol>
+            <li>在 IDE 中打开 <strong>Settings / Preferences</strong></li>
+            <li>进入 <strong>Plugins</strong>，点击齿轮图标</li>
+            <li>选择 <strong>Manage Plugin Repositories...</strong></li>
+            <li>点击 <strong>+</strong>，粘贴下面的地址</li>
+        </ol>
+        <div class="url-row">
+            <label class="sr-only" for="pluginUrlInput">插件源地址</label>
+            <input id="pluginUrlInput" value="{{ update_plugins_xml_url }}" readonly>
+            <button id="copyUrlBtn" class="button" type="button">复制</button>
+        </div>
+        <div class="modal-actions"><button id="closeModalBtn" class="button secondary" type="button">关闭</button></div>
+    </div>
+</dialog>
 {% endif %}
 
 <script>
-    /**
-     * @typedef {Object} PluginVersion
-     * @property {string} version
-     * @property {string|null} size
-     * @property {string|null} updated_date
-     * @property {string|null} since_build
-     * @property {string|null} until_build
-     * @property {string} file_url
-     */
-    /**
-     * @typedef {Object} PluginItem
-     * @property {string} id
-     * @property {string} name
-     * @property {string} description  Raw HTML
-     * @property {string} vendor
-     * @property {string} category
-     * @property {string[]} tags
-     * @property {PluginVersion[]} versions
-     */
-    /** @type {PluginItem[]} */
     const items = {{ items | tojson }};
-</script>
-<script>
     const container = document.getElementById('cardsContainer');
-    const paginationEl = document.getElementById('pagination');
-    /** @type {HTMLInputElement} */
+    const pagination = document.getElementById('pagination');
     const searchInput = document.getElementById('searchInput');
-    const itemsPerPage = 50;
+    const clearSearch = document.getElementById('clearSearch');
+    const resultCount = document.getElementById('resultCount');
+    const itemsPerPage = 30;
     let currentPage = 1;
     let filteredItems = items.slice();
 
-    function createCard(item) {
-        const card = document.createElement('div');
-        card.className = 'card';
-        const searchText = [item.name, item.vendor, item.id, ...(item.category || []), ...(item.tags || [])].join(' ').toLowerCase();
-        card.setAttribute('data-search', searchText);
+    function addText(parent, tagName, className, text) {
+        const element = document.createElement(tagName);
+        if (className) element.className = className;
+        element.textContent = text;
+        parent.appendChild(element);
+        return element;
+    }
 
+    function descriptionText(value) {
+        const documentNode = new DOMParser().parseFromString(value || '', 'text/html');
+        return (documentNode.body.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function createCard(item) {
+        const article = document.createElement('article');
+        article.className = 'card';
         const details = document.createElement('details');
         const summary = document.createElement('summary');
-        summary.className = 'summary-header';
-
-        const titleGroup = document.createElement('span');
-        titleGroup.className = 'title-group';
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'plugin-name';
-        nameSpan.textContent = item.name;
-        const vendorSpan = document.createElement('span');
-        vendorSpan.className = 'vendor';
-        vendorSpan.textContent = `by ${item.vendor}`;
-        titleGroup.append(nameSpan, vendorSpan);
-        if (item.category) {
-            const catTag = document.createElement('span');
-            catTag.className = 'tag';
-            catTag.textContent = item.category;
-            titleGroup.append(catTag);
+        const title = addText(summary, 'div', 'title', '');
+        const titleLine = addText(title, 'div', 'title-line', '');
+        addText(titleLine, 'span', 'name', item.name);
+        if (item.vendor) addText(titleLine, 'span', 'vendor', `by ${item.vendor}`);
+        const labels = [...new Set([item.category, ...(item.tags || [])].filter(Boolean))];
+        if (labels.length) {
+            const tags = addText(title, 'div', 'tags', '');
+            labels.forEach(label => addText(tags, 'span', 'tag', label));
         }
-        for (const t of item.tags || []) {
-            const tag = document.createElement('span');
-            tag.className = 'tag';
-            tag.textContent = t;
-            titleGroup.appendChild(tag);
-        }
-        summary.appendChild(titleGroup);
         details.appendChild(summary);
-
-        const idLine = document.createElement('p');
-        idLine.className = 'description';
-        idLine.textContent = `ID：${item.id}`;
-        details.appendChild(idLine);
-
-        const desc = document.createElement('div');
-        desc.className = 'description';
-        desc.textContent = item.description;
-        details.appendChild(desc);
-
-        const ul = document.createElement('ul');
-        ul.className = 'version-list';
-        item.versions.forEach(ver => {
-            const li = document.createElement('li');
-            li.className = 'version-item';
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'version-info';
-            infoDiv.textContent = `${ver.version} ${ver.size ? `(${ver.size})` : ''}\n` +
-                `更新时间：${ver.updated_date || '-'}\n` +
-                `兼容：${ver.since_build || '-'} - ${ver.until_build || '-'}`;
-            const link = document.createElement('a');
-            link.className = 'download-link';
-            link.href = ver.file_url;
+        const content = addText(details, 'div', 'content', '');
+        addText(content, 'p', 'meta', item.id);
+        if (item.description) addText(content, 'div', 'description', descriptionText(item.description));
+        const versions = addText(content, 'ul', 'versions', '');
+        item.versions.forEach(version => {
+            const row = addText(versions, 'li', 'version', '');
+            const info = addText(row, 'div', '', '');
+            addText(info, 'strong', '', `${version.version}${version.size ? ` · ${version.size}` : ''}`);
+            addText(info, 'small', '', `兼容 ${version.since_build || '不限'} – ${version.until_build || '不限'} · ${version.updated_date || '时间未知'}`);
+            const link = addText(row, 'a', 'download', '下载');
+            link.href = version.file_url;
             link.download = '';
-            link.textContent = '下载';
-            li.append(infoDiv, link);
-            ul.appendChild(li);
         });
-        details.appendChild(ul);
-        card.appendChild(details);
-        return card;
+        article.appendChild(details);
+        return article;
     }
 
-    function renderPage(page) {
-        currentPage = page;
-        const start = (page - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-        container.innerHTML = '';
-        filteredItems.slice(start, end).forEach(item => container.appendChild(createCard(item)));
-        renderPagination();
+    function pageButton(label, page, disabled = false, current = false) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = label;
+        button.disabled = disabled;
+        button.setAttribute('aria-label', label);
+        if (current) button.setAttribute('aria-current', 'page');
+        if (!disabled) button.addEventListener('click', () => render(page));
+        return button;
     }
 
-    function renderPagination() {
-        const totalPages = Math.ceil(filteredItems.length / itemsPerPage) || 1;
-        paginationEl.innerHTML = '';
-        const makeBtn = (text, page, disabled) => {
-            const btn = document.createElement('button');
-            btn.textContent = text;
-            if (disabled) btn.classList.add('disabled');
-            if (page === currentPage) btn.classList.add('active');
-            if (!disabled) btn.addEventListener('click', () => renderPage(page));
-            return btn;
-        };
-        paginationEl.append(makeBtn('<<', 1, currentPage === 1));
-        paginationEl.append(makeBtn('<', Math.max(1, currentPage - 1), currentPage === 1));
-
+    function renderPagination(totalPages) {
+        pagination.replaceChildren();
+        if (totalPages <= 1) return;
+        pagination.append(pageButton('上一页', currentPage - 1, currentPage === 1));
         let pages;
-        if (totalPages <= 7) pages = Array.from({length: totalPages}, (_, i) => i + 1);
-        else if (currentPage <= 4) pages = [1, 2, 3, 4, 5, '...', totalPages];
-        else if (currentPage >= totalPages - 3) pages = [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-        else pages = [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
-
-        pages.forEach(p => {
-            if (p === '...') {
-                const span = document.createElement('span');
-                span.textContent = '...';
-                paginationEl.appendChild(span);
-            } else paginationEl.appendChild(makeBtn(p, p));
+        if (totalPages <= 7) pages = Array.from({length: totalPages}, (_, index) => index + 1);
+        else if (currentPage <= 4) pages = [1, 2, 3, 4, 5, '…', totalPages];
+        else if (currentPage >= totalPages - 3) pages = [1, '…', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+        else pages = [1, '…', currentPage - 1, currentPage, currentPage + 1, '…', totalPages];
+        pages.forEach(page => {
+            if (page === '…') addText(pagination, 'span', '', page);
+            else pagination.append(pageButton(String(page), page, false, page === currentPage));
         });
-        paginationEl.append(makeBtn('>', Math.min(totalPages, currentPage + 1), currentPage === totalPages));
-        paginationEl.append(makeBtn('>>', totalPages, currentPage === totalPages));
+        pagination.append(pageButton('下一页', currentPage + 1, currentPage === totalPages));
     }
 
-    searchInput.addEventListener('input', () => {
-        const keys = searchInput.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    function render(page = 1) {
+        const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+        currentPage = Math.min(Math.max(page, 1), totalPages);
+        container.replaceChildren();
+        const pageItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        if (pageItems.length) pageItems.forEach(item => container.appendChild(createCard(item)));
+        else addText(container, 'div', 'empty', '没有找到匹配的插件');
+        resultCount.textContent = `共 ${filteredItems.length} 个插件`;
+        renderPagination(totalPages);
+    }
+
+    function filterItems() {
+        const keywords = searchInput.value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
         filteredItems = items.filter(item => {
-            const text = [item.name, item.vendor, item.id, ...(item.category || []), ...(item.tags || [])].join(' ').toLowerCase();
-            return keys.every(k => text.includes(k));
+            const text = [item.name, item.vendor, item.id, item.category, ...(item.tags || [])].filter(Boolean).join(' ').toLocaleLowerCase();
+            return keywords.every(keyword => text.includes(keyword));
         });
-        renderPage(1);
-    });
+        clearSearch.hidden = !searchInput.value;
+        render(1);
+    }
 
-    renderPage(1);
+    searchInput.addEventListener('input', filterItems);
+    clearSearch.addEventListener('click', () => { searchInput.value = ''; filterItems(); searchInput.focus(); });
+    render();
 
-    // 自定义源仓库模态框逻辑
+    const pageInfoModal = document.getElementById('pageInfoModal');
+    document.getElementById('pageInfoBtn').addEventListener('click', () => pageInfoModal.showModal());
+    document.getElementById('closePageInfoBtn').addEventListener('click', () => pageInfoModal.close());
+    pageInfoModal.addEventListener('click', event => { if (event.target === pageInfoModal) pageInfoModal.close(); });
+
     {% if update_plugins_xml_url %}
-        /** @type {HTMLElement} */
-        const modal = document.getElementById('customSourceModal');
-        const btn = document.getElementById('customSourceBtn');
-        const closeBtn = document.getElementById('closeModalBtn');
-        const copyBtn = document.getElementById('copyUrlBtn');
-        /** @type {HTMLInputElement} */
-        const urlInput = document.getElementById('pluginUrlInput');
-
-        // 显示模态框
-        btn.addEventListener('click', () => {
-            modal.style.display = 'flex';
-        });
-
-        // 关闭模态框
-        closeBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-
-        // 点击背景关闭
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.style.display = 'none';
-            }
-        });
-
-        // 复制 URL
-        copyBtn.addEventListener('click', () => {
+    const modal = document.getElementById('customSourceModal');
+    const copyButton = document.getElementById('copyUrlBtn');
+    const urlInput = document.getElementById('pluginUrlInput');
+    document.getElementById('customSourceBtn').addEventListener('click', () => modal.showModal());
+    document.getElementById('closeModalBtn').addEventListener('click', () => modal.close());
+    modal.addEventListener('click', event => { if (event.target === modal) modal.close(); });
+    copyButton.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(urlInput.value);
+        } catch (_) {
             urlInput.select();
             document.execCommand('copy');
-            alert('URL 已复制到剪贴板');
-        });
+        }
+        copyButton.textContent = '已复制';
+        setTimeout(() => { copyButton.textContent = '复制'; }, 1600);
+    });
     {% endif %}
 </script>
 </body>
