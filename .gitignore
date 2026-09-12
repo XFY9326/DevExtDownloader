@@ -165,5 +165,10 @@ cython_debug/
 # VSCode
 .vscode/
 
+# Cache
+.uv-cache/*
+.ruff_cache/*
+.mypy_cache/*
+
 # Local config
 local_config/*
